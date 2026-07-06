@@ -67,6 +67,12 @@
         .slide.active .stagger-2 { opacity: 1; transform: translateY(0); transition-delay: 0.35s; }
         .slide.active .stagger-3 { opacity: 1; transform: translateY(0); transition-delay: 0.5s; }
 
+        /* CORREÇÃO DO Z-INDEX DO POPUP: 
+           Qualquer bloco (stagger) que você passar o mouse 
+           pulará automaticamente para a frente de tudo! */
+        .stagger-1, .stagger-2, .stagger-3 { position: relative; z-index: 1; }
+        .stagger-1:hover, .stagger-2:hover, .stagger-3:hover { z-index: 100; }
+
         /* UI Elementos */
         .glass-header {
             position: fixed; top: 0; left: 0; width: 100%; height: 80px;
@@ -139,6 +145,62 @@
         .code-preview-raw h3 { font-size: 24px; font-weight: normal; margin-bottom: 10px; }
         .code-preview-raw ul { list-style-type: disc; margin-left: 20px; }
 
+        /* Tooltip de Vocabulário - 100% por cima e com cor preta (inherit) */
+        .tooltip {
+            position: relative;
+            cursor: help;
+            border-bottom: 2px dotted var(--faep-dark); /* Cor preta escura do sistema */
+            color: inherit; /* Puxa a cor exata do texto ao redor */
+            transition: background-color 0.2s;
+        }
+        .tooltip:hover {
+            background-color: rgba(0,0,0,0.05); /* Fundo leve cinza ao passar mouse */
+        }
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%) translateY(-5px);
+            width: max-content;
+            max-width: 260px;
+            background: var(--faep-dark);
+            color: var(--faep-gray);
+            text-align: left;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            line-height: 1.4;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            z-index: 999999;
+            white-space: normal;
+            font-family: 'Outfit', sans-serif;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.2, 1);
+        }
+        .tooltip::before {
+            content: '';
+            position: absolute;
+            top: calc(100% + 4px); 
+            left: 50%;
+            transform: translateX(-50%) translateY(-5px);
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent transparent var(--faep-dark) transparent;
+            z-index: 999999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.2, 1);
+        }
+        .tooltip:hover::after, .tooltip:hover::before {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
         /* Custom Animations Util */
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -182,7 +244,7 @@
                 <i class="fa-solid fa-volume-xmark text-slate-400 text-sm" id="audio-icon"></i>
             </div>
             
-            <!-- Controle de Volume Oculto (Aparece no Hover). Ajuste: pt-2 para ponte visual -->
+            <!-- Controle de Volume Oculto -->
             <div class="absolute right-0 top-full pt-2 w-40 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                 <div class="bg-white/90 backdrop-blur border border-slate-200 rounded-xl shadow-xl p-4 transform origin-top-right scale-95 group-hover:scale-100 transition-transform duration-300">
                     <p class="text-xs text-slate-500 font-bold mb-2 uppercase text-center">Volume</p>
@@ -192,7 +254,7 @@
         </div>
     </header>
 
-    <!-- Botão de Voltar ao Índice (Fixo) -->
+    <!-- Botão de Voltar ao Índice -->
     <button id="btnBackIndex" onclick="goToSlide(1)" class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-white/80 backdrop-blur border border-slate-200 shadow-lg rounded-full flex items-center justify-center text-slate-600 hover:text-[#00703c] hover:scale-110 hover:shadow-xl transition-all duration-300 opacity-0 pointer-events-none translate-y-4" title="Voltar ao Índice">
         <i class="fa-solid fa-list-ul text-lg"></i>
     </button>
@@ -208,12 +270,12 @@
                     Apresentações Web <br>com <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00703c] to-[#10b981]">Inteligência Artificial</span>
                 </h1>
                 <p class="stagger-3 text-xl text-slate-800 font-medium mb-10 max-w-2xl drop-shadow-md">
-                    Transforme ideias em slides interativos usando o poder do ChatGPT ou Gemini e publique-os na web. Sem precisar programar.
+                    Transforme ideias em slides interativos usando o poder do ChatGPT ou Gemini e publique-os na web em segundos. Sem precisar programar.
                 </p>
                 <div class="stagger-3 mt-8">
                     <button onclick="nextAction()" class="group relative px-8 py-4 bg-[#00703c] text-white rounded-full font-semibold text-lg overflow-hidden shadow-[0_10px_20px_rgba(0,112,60,0.3)] transition-all hover:scale-105 hover:shadow-[0_15px_30px_rgba(0,112,60,0.4)]">
                         <div class="absolute inset-0 w-full h-full bg-white/20 scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-full"></div>
-                        <span class="relative flex items-center gap-2">Iniciar <i class="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"></i></span>
+                        <span class="relative flex items-center gap-2">Iniciar Jornada <i class="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"></i></span>
                     </button>
                 </div>
             </div>
@@ -223,13 +285,12 @@
         <section class="slide" id="slide-indice" data-fragments="6">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12">
                 <div class="stagger-1 text-center mb-8 shrink-0">
-                    <h2 class="text-4xl font-bold text-slate-800">Sumário</h2>
-                    <p class="text-slate-600 mt-2"><strong class="text-[#00703c]">Clique com o mouse</strong> para ir direto ao tópico.</p>
+                    <h2 class="text-4xl font-bold text-slate-800">Mapa da Jornada</h2>
+                    <p class="text-slate-600 mt-2">Navegue pelas setas do teclado para focar no tópico ou <strong class="text-[#00703c]">clique com o mouse</strong> para ir direto a ele.</p>
                 </div>
                 
                 <div class="stagger-2 flex-1 flex items-center justify-center">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
-                        <!-- Items do Índice -->
                         <div id="idx-1" onclick="goToSlide(2)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
                             <div class="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-code"></i></div>
                             <div><h3 class="font-bold text-slate-800">O que são as Tecnologias?</h3><p class="text-xs text-slate-500">Entendendo HTML, CSS e JS</p></div>
@@ -242,12 +303,12 @@
                         
                         <div id="idx-3" onclick="goToSlide(4)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
                             <div class="w-12 h-12 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                            <div><h3 class="font-bold text-slate-800">Engenharia de Prompt</h3><p class="text-xs text-slate-500">A magia</p></div>
+                            <div><h3 class="font-bold text-slate-800">Engenharia de <span class="tooltip" data-tooltip="Comando ou instrução em texto que você escreve para a Inteligência Artificial.">Prompt</span></h3><p class="text-xs text-slate-500">A magia e a regra de ouro</p></div>
                         </div>
 
                         <div id="idx-4" onclick="goToSlide(8)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
                             <div class="w-12 h-12 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                            <div><h3 class="font-bold text-slate-800">Publicação & Deploy</h3><p class="text-xs text-slate-500">Netlify e integração GitHub</p></div>
+                            <div><h3 class="font-bold text-slate-800">Publicação & <span class="tooltip" data-tooltip="Ato de colocar o site ou aplicativo no ar, disponível em um servidor público.">Deploy</span></h3><p class="text-xs text-slate-500">Netlify e integração GitHub</p></div>
                         </div>
 
                         <div id="idx-5" onclick="goToSlide(12)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
@@ -281,12 +342,12 @@
                         </div>
                         
                         <div id="box-css" class="bg-white p-5 rounded-2xl border border-slate-200 shadow transition-all duration-500 opacity-40">
-                            <div class="flex items-center gap-3 mb-2"><i class="fa-brands fa-css3-alt text-blue-500 text-3xl"></i><h3 class="font-bold text-xl text-slate-800">CSS (A Pele)</h3></div>
+                            <div class="flex items-center gap-3 mb-2"><i class="fa-brands fa-css3-alt text-blue-500 text-3xl"></i><h3 class="font-bold text-xl text-slate-800">CSS (A Pele / Roupa)</h3></div>
                             <p class="text-slate-600 text-sm">Define a aparência. Cores, fontes, cantos arredondados, margens e o embelezamento geral.</p>
                         </div>
 
                         <div id="box-js" class="bg-white p-5 rounded-2xl border border-slate-200 shadow transition-all duration-500 opacity-40">
-                            <div class="flex items-center gap-3 mb-2"><i class="fa-brands fa-js text-yellow-400 text-3xl"></i><h3 class="font-bold text-xl text-slate-800">JS (O Músculo)</h3></div>
+                            <div class="flex items-center gap-3 mb-2"><i class="fa-brands fa-js text-yellow-400 text-3xl"></i><h3 class="font-bold text-xl text-slate-800">JS (O Músculo / Ação)</h3></div>
                             <p class="text-slate-600 text-sm">JavaScript traz interatividade e inteligência. É ele quem faz botões reagirem aos seus cliques.</p>
                         </div>
                     </div>
@@ -349,7 +410,7 @@
                         <div id="vant-1" class="copy-step flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 transition-all duration-500 opacity-40">
                             <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 transition-colors text-2xl"><i class="fa-solid fa-mobile-screen-button"></i></div>
                             <div>
-                                <h3 class="font-bold text-lg text-slate-800">Responsividade Total</h3>
+                                <h3 class="font-bold text-lg text-slate-800"><span class="tooltip" data-tooltip="Capacidade do site se adaptar perfeitamente a qualquer tamanho de tela (celular, tablet, etc).">Responsividade</span> Total</h3>
                                 <p class="text-slate-600 text-sm pt-1">O layout se adapta a qualquer tela: celular, tablet ou projetor, sem quebrar as imagens.</p>
                             </div>
                         </div>
@@ -392,7 +453,7 @@
                         <!-- Vis 2 -->
                         <div id="vis-vant-2" class="absolute inset-0 bg-[#efeae2] flex items-center justify-center transition-opacity duration-500 z-30 opacity-0 pointer-events-none p-6">
                             <div class="bg-white rounded-xl shadow-md w-full max-w-sm h-full flex flex-col overflow-hidden border border-slate-200">
-                                <div class="bg-[#00a884] h-14 flex items-center px-4 text-white font-bold gap-3 shrink-0"><div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center"><i class="fa-solid fa-user"></i></div>Grupo Sistema FAEP</div>
+                                <div class="bg-[#00a884] h-14 flex items-center px-4 text-white font-bold gap-3 shrink-0"><div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center"><i class="fa-solid fa-user"></i></div>Grupo Diretoria FAEP</div>
                                 <div class="flex-1 bg-[#efeae2] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] p-4 flex flex-col gap-3 relative justify-end pb-6">
                                     <div class="bg-white p-3 rounded-xl rounded-tl-none self-start max-w-[85%] shadow text-sm text-slate-700">Bom dia! A apresentação está pronta?</div>
                                     <div class="bg-[#d9fdd3] p-3 rounded-xl rounded-tr-none self-end max-w-[85%] shadow text-sm text-slate-700 transform translate-y-6 opacity-0 transition-all duration-700 delay-300" id="msg-link">Sim! Só abrir pelo navegador do celular ou PC:<br><a href="#" class="text-blue-500 underline break-all font-semibold mt-1 inline-block"><i class="fa-solid fa-link"></i> faep-apresentacao.netlify.app</a></div>
@@ -414,7 +475,7 @@
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
                     <div class="w-12 h-12 rounded-full bg-[#00703c] text-white flex items-center justify-center text-xl font-bold shadow-lg">1</div>
-                    <h2 class="text-4xl font-bold text-slate-800">O Prompt Inicial (O Pedido)</h2>
+                    <h2 class="text-4xl font-bold text-slate-800">O <span class="tooltip" data-tooltip="Instrução detalhada ou comando em texto dado à Inteligência Artificial.">Prompt</span> Inicial (O Pedido)</h2>
                 </div>
                 <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">Para um bom resultado, seja claro com a IA. Especifique o formato, o design e o conteúdo.</p>
                 
@@ -435,13 +496,13 @@ Regras absolutas e inegociáveis:
                 
                 <div class="stagger-3 mt-4 w-full transition-all duration-500 origin-top" id="dicaContainer">
                     <button id="btnDica" onclick="revelarDica()" class="px-5 py-3 bg-amber-100 text-amber-800 rounded-xl hover:bg-amber-200 transition-colors font-bold flex items-center justify-center gap-2 shadow-sm w-full md:w-auto mx-auto md:mx-0">
-                        <i class="fa-solid fa-lightbulb"></i>Dica 
+                        <i class="fa-solid fa-lightbulb"></i> Revelar Dica Importante
                     </button>
                     <div id="dicaOuro" class="hidden bg-gradient-to-r from-amber-50 to-white border border-amber-200 p-6 rounded-2xl flex items-start gap-4 shadow-lg animate-[fadeInDown_0.4s_ease-out]">
                         <div class="mt-1 text-amber-500 p-3 bg-amber-100 rounded-full"><i class="fa-solid fa-key text-2xl"></i></div>
                         <div>
-                            <h4 class="font-bold text-amber-800 text-xl mb-1">Dica</h4>
-                            <p class="text-amber-700 leading-relaxed">Reforce a exigência do <strong>"ÚNICO arquivo index.html"</strong>. Isso elimina a complexidade de gerenciar pastas de imagens, arquivos CSS e JS separados na hora da publicação web.</p>
+                            <h4 class="font-bold text-amber-800 text-xl mb-1">A Regra de Ouro</h4>
+                            <p class="text-amber-700 leading-relaxed">Sempre reforce a exigência do <strong>"ÚNICO arquivo index.html"</strong>. Isso elimina a complexidade de gerenciar pastas de imagens, arquivos CSS e JS separados na hora da publicação web.</p>
                         </div>
                     </div>
                 </div>
@@ -539,7 +600,7 @@ Regras absolutas e inegociáveis:
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12">
                 <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
                     <div class="w-12 h-12 rounded-full bg-[#00703c] text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-rotate"></i></div>
-                    <h2 class="text-4xl font-bold text-slate-800">O Segredo da Iteração</h2>
+                    <h2 class="text-4xl font-bold text-slate-800">O Segredo da <span class="tooltip" data-tooltip="Processo de repetir uma ação, fazendo pequenos ajustes e melhorias a cada repetição.">Iteração</span></h2>
                 </div>
                 <p class="stagger-1 text-xl text-slate-600 mb-8 shrink-0">Não aceite a primeira versão. O segredo é pedir para a IA fazer "ajustes finos" progressivos no código que ela acabou de gerar.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 stagger-2 items-stretch h-full pb-8">
@@ -608,7 +669,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                     <div class="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-brands fa-github"></i></div>
                     <h2 class="text-4xl font-bold text-slate-800">Alternativa: Usando o GitHub</h2>
                 </div>
-                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">Em projetos reais, salvamos o código no GitHub.</strong></p>
+                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">Em projetos reais, salvamos o código no GitHub. <strong>Copie o código abaixo e cole no painel ao lado.</strong></p>
                 
                 <button onclick="resetGithub()" class="absolute top-24 right-8 w-10 h-10 bg-white text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-full shadow border border-slate-200 flex items-center justify-center transition z-50" title="Reiniciar Tela">
                     <i class="fa-solid fa-arrow-rotate-right"></i>
@@ -634,8 +695,8 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                     <div class="flex flex-col bg-[#f6f8fa] border border-[#d0d7de] rounded-2xl shadow-xl overflow-hidden relative">
                         <div id="git-success-overlay" class="absolute inset-0 bg-white z-20 hidden flex-col items-center justify-center text-center p-8 animate-[scaleIn_0.4s_ease-out]">
                             <i class="fa-solid fa-circle-check text-6xl text-emerald-500 mb-4"></i>
-                            <h3 class="text-2xl font-bold text-slate-800 mb-2">Commit Realizado!</h3>
-                            <p class="text-slate-600">Seu código foi salvo com segurança no repositório.</p>
+                            <h3 class="text-2xl font-bold text-slate-800 mb-2"><span class="tooltip" data-tooltip="Ato de salvar uma nova versão ou alteração do código no histórico do projeto.">Commit</span> Realizado!</h3>
+                            <p class="text-slate-600">Seu código foi salvo com segurança no <span class="tooltip" data-tooltip="Local na nuvem onde os arquivos e o histórico do código de um projeto são armazenados.">repositório</span>.</p>
                         </div>
                         
                         <div class="bg-[#f6f8fa] px-4 py-3 border-b border-[#d0d7de] flex items-center gap-2 text-sm text-[#0969da] font-semibold">
@@ -670,7 +731,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                     <div class="w-12 h-12 rounded-full bg-teal-600 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-plug"></i></div>
                     <h2 class="text-4xl font-bold text-slate-800">Conectando ao Netlify</h2>
                 </div>
-                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">Basta autorizar o Netlify a ler seu repositório no GitHub. É um processo de cliques.</p>
+                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">Basta autorizar o Netlify a ler seu <span class="tooltip" data-tooltip="Local na nuvem onde os arquivos e o histórico do código de um projeto são armazenados.">repositório</span> no GitHub. É um processo de cliques.</p>
                 
                 <button onclick="resetNetlifyFlow()" class="absolute top-24 right-8 w-10 h-10 bg-white text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-full shadow border border-slate-200 flex items-center justify-center transition z-50" title="Reiniciar Interface">
                     <i class="fa-solid fa-arrow-rotate-right"></i>
@@ -690,7 +751,6 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                             <div class="relative inline-block group">
                                 <button class="bg-teal-600 text-white px-6 py-3 rounded-lg font-bold shadow-md cursor-pointer"><i class="fa-solid fa-plus mr-2"></i> Add new site</button>
                                 
-                                <!-- CORREÇÃO DE HOVER: pt-2 adicionado e margin removida -->
                                 <div class="absolute top-full left-0 pt-2 hidden group-hover:flex z-50 w-64">
                                     <div class="bg-white border border-slate-200 rounded-lg shadow-xl text-left w-full flex-col overflow-hidden">
                                         <div onclick="setNetlifyStep(1)" class="px-4 py-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"><strong class="block text-slate-700">Import an existing project</strong><span class="text-xs text-slate-500">From a Git repository</span></div>
@@ -738,37 +798,40 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             </div>
         </section>
 
-        <!-- Slide 11: CI/CD -->
-        <section class="slide">
+        <!-- Slide 11: CI/CD Automático -->
+        <section class="slide" id="slide-cicd">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-4 shrink-0">
                     <div class="w-12 h-12 rounded-full bg-teal-500 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-bolt"></i></div>
-                    <h2 class="text-4xl font-bold text-slate-800">A Mágica da Integração (CI/CD)</h2>
+                    <h2 class="text-4xl font-bold text-slate-800">A Mágica da Integração (<span class="tooltip" data-tooltip="Continuous Integration / Continuous Deployment: Processo automatizado de colocar as atualizações de código no ar instantaneamente.">CI/CD</span>)</h2>
                 </div>
-                <p class="stagger-1 text-xl text-slate-600 mb-10 shrink-0">Com o repositório conectado, toda vez que você fizer um <strong>novo Commit no GitHub</strong>, o Netlify atualiza o site no ar automaticamente.</p>
+                <p class="stagger-1 text-xl text-slate-600 mb-8 shrink-0">Com o repositório conectado, toda vez que você fizer um novo <span class="tooltip" data-tooltip="Ato de salvar uma nova versão do código no histórico do projeto.">Commit</span> no GitHub, o Netlify atualiza o site no ar automaticamente.</p>
                 
-                <button onclick="resetCICD()" class="absolute top-24 right-8 w-10 h-10 bg-white text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-full shadow border border-slate-200 flex items-center justify-center transition z-50" title="Reiniciar Animação">
-                    <i class="fa-solid fa-arrow-rotate-right"></i>
-                </button>
-
-                <div class="stagger-2 flex flex-col items-center justify-center flex-1">
-                    <div class="flex w-full max-w-3xl items-center justify-between mt-4">
-                        <div class="w-36 h-36 bg-slate-900 text-white rounded-2xl flex flex-col items-center justify-center shadow-xl border-4 border-slate-700 z-10">
-                            <i class="fa-brands fa-github text-5xl mb-2"></i><span class="text-sm font-bold">GitHub (Código)</span>
+                <div class="stagger-2 flex flex-col items-center justify-center flex-1 w-full">
+                    <div class="flex w-full max-w-3xl items-center justify-between mt-2 relative z-20">
+                        <div class="w-32 h-32 md:w-36 md:h-36 bg-slate-900 text-white rounded-2xl flex flex-col items-center justify-center shadow-xl border-4 border-slate-700 z-10 relative bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+                            <i class="fa-brands fa-github text-4xl md:text-5xl mb-2"></i><span class="text-xs md:text-sm font-bold">GitHub (Código)</span>
                         </div>
                         <div class="flex-1 h-3 bg-slate-200 relative -mx-4 z-0 overflow-hidden rounded shadow-inner">
-                            <div id="deploy-pulse" class="absolute top-0 left-0 h-full bg-blue-500 rounded hidden"></div>
+                            <div id="deploy-pulse" class="absolute top-0 left-0 h-full bg-green-500 rounded hidden"></div>
                         </div>
-                        <div class="w-36 h-36 bg-white text-teal-600 rounded-2xl flex flex-col items-center justify-center shadow-xl border-4 border-teal-100 z-10">
-                            <i class="fa-solid fa-server text-5xl mb-2 text-teal-500"></i><span class="text-sm font-bold">Netlify (Servidor)</span>
+                        <div class="w-32 h-32 md:w-36 md:h-36 bg-white text-teal-600 rounded-2xl flex flex-col items-center justify-center shadow-xl border-4 border-teal-100 z-10 relative">
+                            <i class="fa-solid fa-server text-4xl md:text-5xl mb-2 text-teal-500"></i><span class="text-xs md:text-sm font-bold">Netlify (Servidor)</span>
                         </div>
                     </div>
-                    <div class="text-center mt-12 w-full">
-                        <button onclick="triggerDeploy()" id="btnDeploy" class="px-8 py-4 bg-teal-600 text-white rounded-full font-bold shadow-lg hover:bg-teal-700 flex items-center justify-center gap-3 mx-auto transition-transform hover:scale-105">
-                             <i class="fa-solid fa-rotate"></i> Simular Nova Atualização no Código
-                        </button>
-                        <div class="mt-6 h-8 flex items-center justify-center">
-                            <p id="deployStatus" class="text-slate-600 font-mono text-sm font-semibold bg-slate-100 px-4 py-2 rounded-lg hidden"></p>
+                    
+                    <div class="mt-8 w-full max-w-3xl mx-auto z-10">
+                        <div class="bg-[#1e1e1e] rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col h-48">
+                            <div class="bg-slate-800 px-4 py-2 flex items-center gap-2 border-b border-slate-700 shrink-0">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                <span class="ml-2 text-xs font-mono text-slate-400">deploy-automation.log</span>
+                            </div>
+                            <!-- Log de Texto que se acumula -->
+                            <div id="deployStatusLog" class="p-4 flex-1 overflow-y-auto flex-col gap-2 font-mono text-xs md:text-sm scroll-smooth text-left text-slate-300 flex">
+                                <div class="text-slate-500 italic">Monitorando atualizações no branch main...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1034,13 +1097,20 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentSlide); });
             progressBar.style.width = `${(currentSlide / (totalSlides - 1)) * 100}%`;
 
-            // Controle do botão de "Voltar ao Índice" (Slide 0 = Capa, Slide 1 = Índice)
+            // Controle do botão de "Voltar ao Índice"
             if(currentSlide <= 1) { 
                 btnBackIndex.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
                 btnBackIndex.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
             } else {
                 btnBackIndex.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
                 btnBackIndex.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+            }
+
+            // Ativar animação do CI/CD automaticamente
+            if (slides[currentSlide].id === 'slide-cicd') {
+                startCICDAnimation();
+            } else {
+                stopCICDAnimation();
             }
         }
 
@@ -1335,31 +1405,65 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                 btn.classList.replace('hover:bg-teal-700', 'hover:bg-emerald-600');
             }, 1500);
         }
-        
-        function triggerDeploy() {
-            const pulse = document.getElementById('deploy-pulse'); const status = document.getElementById('deployStatus'); const btn = document.getElementById('btnDeploy');
-            btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
-            status.classList.remove('hidden'); status.innerText = "> Novo commit detectado. Iniciando pipeline...";
-            pulse.classList.remove('hidden'); pulse.style.animation = 'slideRight 2s linear forwards';
+
+        // --- SISTEMA DE LOG E ANIMAÇÃO AUTOMÁTICA DO CI/CD ---
+        let cicdInterval = null;
+        let cicdTimeouts = [];
+
+        function startCICDAnimation() {
+            if (cicdInterval) return;
+            const pulse = document.getElementById('deploy-pulse');
+            const logBox = document.getElementById('deployStatusLog');
+            if(!logBox) return;
             
-            setTimeout(() => { status.innerText = "> Netlify conectando ao repositório..."; }, 700);
-            setTimeout(() => { status.innerText = "> Renderizando HTML... Atualizando CDN..."; }, 1400);
-            setTimeout(() => {
-                status.innerText = "> Deploy bem-sucedido! O site atualizou.";
-                status.classList.replace('text-slate-600', 'text-teal-700'); status.classList.replace('bg-slate-100', 'bg-teal-50'); pulse.classList.replace('bg-blue-500', 'bg-teal-400');
-                setTimeout(() => {
-                    btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    pulse.classList.add('hidden'); pulse.classList.replace('bg-teal-400', 'bg-blue-500'); pulse.style.animation = '';
-                    status.classList.add('hidden'); status.classList.replace('text-teal-700', 'text-slate-600'); status.classList.replace('bg-teal-50', 'bg-slate-100');
-                }, 4000);
-            }, 2300);
+            logBox.innerHTML = '<div class="text-slate-500 italic">Monitorando atualizações no branch main...</div>';
+
+            function runCycle() {
+                if (slides[currentSlide].id !== 'slide-cicd') { stopCICDAnimation(); return; }
+
+                const timeStr = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+                logBox.innerHTML += `<div class="text-slate-400 mt-2">> [${timeStr}] <span class="text-green-400 font-bold">git push origin main</span> detectado.</div>`;
+                logBox.scrollTop = logBox.scrollHeight;
+                
+                pulse.classList.remove('hidden');
+                pulse.classList.add('bg-green-500', 'shadow-[0_0_15px_#22c55e]');
+                pulse.style.animation = 'none';
+                void pulse.offsetWidth; 
+                pulse.style.animation = 'slideRight 2.5s linear forwards';
+                
+                cicdTimeouts.push(setTimeout(() => {
+                    if (slides[currentSlide].id !== 'slide-cicd') return;
+                    logBox.innerHTML += `<div class="text-slate-300">> Construindo imagem do servidor no Netlify...</div>`;
+                    logBox.scrollTop = logBox.scrollHeight;
+                }, 800));
+                
+                cicdTimeouts.push(setTimeout(() => {
+                    if (slides[currentSlide].id !== 'slide-cicd') return;
+                    logBox.innerHTML += `<div class="text-yellow-300">> Aplicando CSS e otimizando imagens...</div>`;
+                    logBox.scrollTop = logBox.scrollHeight;
+                }, 1600));
+
+                cicdTimeouts.push(setTimeout(() => {
+                    if (slides[currentSlide].id !== 'slide-cicd') return;
+                    logBox.innerHTML += `<div class="text-green-400 font-bold">> <i class="fa-solid fa-check"></i> Deploy concluído! Site online na versão mais recente.</div>`;
+                    logBox.innerHTML += `<div class="border-b border-slate-700/50 my-2"></div>`;
+                    logBox.scrollTop = logBox.scrollHeight;
+                    pulse.classList.add('hidden');
+                }, 2500));
+            }
+
+            // Executa a primeira vez e entra no loop
+            runCycle();
+            cicdInterval = setInterval(runCycle, 4500);
         }
 
-        function resetCICD() {
-            const btn = document.getElementById('btnDeploy'); const pulse = document.getElementById('deploy-pulse'); const status = document.getElementById('deployStatus');
-            btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            pulse.classList.add('hidden'); pulse.classList.replace('bg-teal-400', 'bg-blue-500'); pulse.style.animation = '';
-            status.classList.add('hidden'); status.classList.replace('text-teal-700', 'text-slate-600'); status.classList.replace('bg-teal-50', 'bg-slate-100');
+        function stopCICDAnimation() {
+            if (cicdInterval) clearInterval(cicdInterval);
+            cicdTimeouts.forEach(clearTimeout);
+            cicdTimeouts = [];
+            cicdInterval = null;
+            const pulse = document.getElementById('deploy-pulse');
+            if(pulse) pulse.classList.add('hidden');
         }
 
         function simulateAIResponse(btnId, blockId) {
@@ -1371,11 +1475,10 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
 
         // --- NAVEGAÇÃO DE TECLADO ---
         document.addEventListener('keydown', (e) => {
-            // Se o usuário estiver digitando dentro de um input ou textarea (como o Github Code), não muda o slide.
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
             if (e.key === 'ArrowRight' || e.key === ' ') {
-                e.preventDefault(); // Evita que a página role para baixo ao apertar Espaço
+                e.preventDefault(); 
                 nextAction();
             } else if (e.key === 'ArrowLeft') {
                 prevAction();
