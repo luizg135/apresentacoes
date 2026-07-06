@@ -1202,15 +1202,6 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                 } else if (fragIdx === 3) {
                     vis0.style.opacity = 0; vis1.style.opacity = 0; vis2.style.opacity = 0; vis3.style.opacity = 1;
                     vis2.classList.add('pointer-events-none'); vis3.classList.remove('pointer-events-none');
-                    
-                    const btn = document.getElementById('btnMockDeploy');
-                    setTimeout(() => {
-                        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Deploying...';
-                        setTimeout(() => {
-                            btn.innerHTML = '<i class="fa-solid fa-check"></i> Site is live!';
-                            btn.classList.replace('bg-teal-600', 'bg-emerald-500'); btn.classList.replace('hover:bg-teal-700', 'hover:bg-emerald-600');
-                        }, 1500);
-                    }, 800);
                 }
             }
         }
