@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apresentações com IA e Netlify - Sistema FAEP</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Adicionando Tone.js para gerar a música de fundo corporativa -->
+    <!-- Tone.js para Áudio -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     
     <style>
@@ -27,7 +30,7 @@
             color: var(--faep-dark);
         }
 
-        /* Blobs Background */
+        /* Fundo Animado (Blobs) */
         .bg-blobs {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: -2; overflow: hidden; background: #f8fafc;
@@ -42,6 +45,7 @@
 
         @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.1); } }
 
+        /* Estrutura Principal dos Slides */
         .slide-container { position: relative; width: 100vw; height: 100vh; }
         .slide {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -55,6 +59,7 @@
         }
         .slide.past { transform: translateX(-100px) scale(0.95); filter: blur(8px); }
 
+        /* Cascata de Entrada (Staggering) */
         .slide .stagger-1, .slide .stagger-2, .slide .stagger-3 {
             opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.25, 1, 0.2, 1);
         }
@@ -62,25 +67,34 @@
         .slide.active .stagger-2 { opacity: 1; transform: translateY(0); transition-delay: 0.35s; }
         .slide.active .stagger-3 { opacity: 1; transform: translateY(0); transition-delay: 0.5s; }
 
+        /* UI Elementos */
         .glass-header {
             position: fixed; top: 0; left: 0; width: 100%; height: 80px;
             background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); display: flex; align-items: center;
-            padding: 0 40px; z-index: 50;
+            justify-content: space-between; padding: 0 40px; z-index: 50;
         }
         .glass-header img { height: 40px; object-fit: contain; }
 
+        /* Controles Ocultos de Navegação Inferior */
+        .bottom-hover-zone { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; z-index: 45; }
+        .bottom-hover-zone:hover + .fixed-controls, .fixed-controls:hover {
+            opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto;
+        }
+
         .fixed-controls {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
             z-index: 50; display: flex; gap: 20px; align-items: center;
             background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px);
             padding: 10px 20px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255,255,255,0.6);
+            opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.25, 1, 0.2, 1);
         }
-        .dots-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 300px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background-color: #cbd5e1; transition: all 0.3s ease; cursor: pointer; }
-        .dot.active { background-color: var(--faep-green); width: 24px; border-radius: 10px; }
+
+        .dots-container { display: flex; gap: 6px; flex-wrap: nowrap; justify-content: center; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; transition: all 0.3s ease; cursor: pointer; }
+        .dot.active { background-color: var(--faep-green); width: 20px; border-radius: 10px; }
 
         .progress-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background-color: transparent; z-index: 60; }
         .progress-bar { height: 100%; background: linear-gradient(90deg, var(--faep-green), var(--faep-accent)); width: 0%; transition: width 0.4s ease-out; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.5); }
@@ -94,7 +108,7 @@
         .soundbars.playing .bar:nth-child(4) { animation-delay: 0.6s; }
         @keyframes soundbar-bounce { 0% { height: 4px; } 100% { height: 16px; } }
 
-        /* Prompts & Code Blocks */
+        /* Caixas de Prompts e Código */
         .prompt-wrapper { position: relative; transition: transform 0.3s ease; }
         .prompt-wrapper:hover { transform: translateY(-2px); }
         .prompt-box {
@@ -120,45 +134,44 @@
         }
         .copy-btn:hover { background: rgba(255,255,255,0.2); }
 
+        /* Estilos da Analogia HTML/CSS/JS */
+        .code-preview-raw { font-family: 'Times New Roman', serif; padding: 20px; background: white; color: black; }
+        .code-preview-raw h3 { font-size: 24px; font-weight: normal; margin-bottom: 10px; }
+        .code-preview-raw ul { list-style-type: disc; margin-left: 20px; }
+
+        /* Custom Animations Util */
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes blink { 50% { border-color: transparent; } }
-        
-        @keyframes deviceResize {
-            0%, 100% { width: 320px; height: 220px; border-radius: 8px; }
-            45%, 55% { width: 140px; height: 280px; border-radius: 20px; }
-        }
+        @keyframes deviceResize { 0%, 100% { width: 320px; height: 220px; border-radius: 8px; } 45%, 55% { width: 140px; height: 280px; border-radius: 20px; } }
         .anim-device { animation: deviceResize 5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-
-        @keyframes slideRight {
-            0% { transform: translateX(-100%); width: 20%; opacity: 1; }
-            50% { width: 40%; }
-            100% { transform: translateX(500%); width: 20%; opacity: 0; }
-        }
+        @keyframes slideRight { 0% { transform: translateX(-100%); width: 20%; opacity: 1; } 50% { width: 40%; } 100% { transform: translateX(500%); width: 20%; opacity: 0; } }
 
         @media (max-width: 768px) {
             .glass-header { padding: 0 20px; height: 60px; }
             .glass-header img { height: 30px; }
             .prompt-box { font-size: 0.9rem; }
-            .dots-container { display: none; }
         }
     </style>
 </head>
 <body>
 
+    <!-- Fundo Animado -->
     <div class="bg-blobs">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
         <div class="blob blob-3"></div>
     </div>
 
+    <!-- Barra de Progresso no Topo -->
     <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
 
+    <!-- Cabeçalho Institucional invertido: Logo Esquerda, Som Direita -->
     <header class="glass-header">
-        <div class="flex items-center gap-4 w-full justify-between">
-            <img src="https://www.sistemafaep.org.br/wp-content/uploads/2024/12/Sistema-FAEP-60-anos-300x121.png" alt="Logo Sistema FAEP">
-            
-            <!-- Botão de Som -->
+        <img src="https://www.sistemafaep.org.br/wp-content/uploads/2024/12/Sistema-FAEP-60-anos-300x121.png" alt="Logo Sistema FAEP">
+        
+        <!-- Componente de Som com Hover de Volume -->
+        <div class="relative group flex items-center h-full py-2">
             <div id="audio-toggle" onclick="toggleAudio()" class="flex items-center gap-3 cursor-pointer bg-slate-100/50 hover:bg-slate-200/80 px-4 py-2 rounded-full transition border border-slate-200/50 shadow-sm" title="Ligar/Desligar Música">
                 <div class="soundbars flex items-end gap-[3px] h-[16px] w-[20px]">
                     <div class="bar w-[3px] bg-slate-400 rounded-t-sm h-[4px]"></div>
@@ -168,12 +181,23 @@
                 </div>
                 <i class="fa-solid fa-volume-xmark text-slate-400 text-sm" id="audio-icon"></i>
             </div>
+            
+            <!-- Controle de Volume Oculto (Aparece no Hover) -->
+            <div class="absolute right-0 top-full mt-2 w-40 bg-white/90 backdrop-blur border border-slate-200 rounded-xl shadow-xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top-right scale-95 group-hover:scale-100">
+                <p class="text-xs text-slate-500 font-bold mb-2 uppercase text-center">Volume</p>
+                <input type="range" id="volumeSlider" min="0" max="100" value="70" class="w-full accent-green-600 cursor-pointer">
+            </div>
         </div>
     </header>
 
+    <!-- Botão de Voltar ao Índice (Fixo) -->
+    <button id="btnBackIndex" onclick="goToSlide(1)" class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-white/80 backdrop-blur border border-slate-200 shadow-lg rounded-full flex items-center justify-center text-slate-600 hover:text-[#00703c] hover:scale-110 hover:shadow-xl transition-all duration-300 opacity-0 pointer-events-none translate-y-4" title="Voltar ao Índice">
+        <i class="fa-solid fa-list-ul text-lg"></i>
+    </button>
+
     <main class="slide-container" id="slideContainer">
         
-        <!-- Slide 1: Capa -->
+        <!-- Slide 0: Capa -->
         <section class="slide active">
             <video src="Fundo.mp4" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-[0.15] z-[-1] pointer-events-none"></video>
             <div class="relative z-10 w-full h-full flex flex-col items-center justify-center text-center p-8">
@@ -193,13 +217,130 @@
             </div>
         </section>
 
-        <!-- Slide 2: Vantagens (Interativo) -->
+        <!-- Slide 1: Índice Interativo -->
+        <section class="slide" id="slide-indice" data-fragments="6">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12">
+                <div class="stagger-1 text-center mb-8 shrink-0">
+                    <h2 class="text-4xl font-bold text-slate-800">Mapa da Jornada</h2>
+                    <p class="text-slate-600 mt-2">Navegue pelas setas do teclado para focar no tópico ou <strong class="text-[#00703c]">clique com o mouse</strong> para ir direto a ele.</p>
+                </div>
+                
+                <div class="stagger-2 flex-1 flex items-center justify-center">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
+                        <!-- Items do Índice -->
+                        <div id="idx-1" onclick="goToSlide(2)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
+                            <div class="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-code"></i></div>
+                            <div><h3 class="font-bold text-slate-800">O que são as Tecnologias?</h3><p class="text-xs text-slate-500">Entendendo HTML, CSS e JS</p></div>
+                        </div>
+                        
+                        <div id="idx-2" onclick="goToSlide(3)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
+                            <div class="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-mobile-screen"></i></div>
+                            <div><h3 class="font-bold text-slate-800">O Motivo da Mudança</h3><p class="text-xs text-slate-500">Benefícios contra o padrão clássico</p></div>
+                        </div>
+                        
+                        <div id="idx-3" onclick="goToSlide(4)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
+                            <div class="w-12 h-12 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div><h3 class="font-bold text-slate-800">Engenharia de Prompt</h3><p class="text-xs text-slate-500">A magia e a regra de ouro</p></div>
+                        </div>
+
+                        <div id="idx-4" onclick="goToSlide(8)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
+                            <div class="w-12 h-12 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                            <div><h3 class="font-bold text-slate-800">Publicação & Deploy</h3><p class="text-xs text-slate-500">Netlify e integração GitHub</p></div>
+                        </div>
+
+                        <div id="idx-5" onclick="goToSlide(12)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
+                            <div class="w-12 h-12 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div><h3 class="font-bold text-slate-800">Tratando Erros Comuns</h3><p class="text-xs text-slate-500">Page Not Found, Imagens, etc.</p></div>
+                        </div>
+
+                        <div id="idx-6" onclick="goToSlide(15)" class="idx-item cursor-pointer bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 opacity-60 hover:opacity-100 shadow-sm">
+                            <div class="w-12 h-12 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-coins"></i></div>
+                            <div><h3 class="font-bold text-slate-800">Precificação e Custos</h3><p class="text-xs text-slate-500">O que é pago e o que é de graça</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 2: O que é HTML, CSS e JS -->
+        <section class="slide" id="slide-htmlcss" data-fragments="3">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12">
+                <div class="stagger-1 flex items-center gap-4 mb-8 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-code"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">A Anatomia da Web</h2>
+                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse ml-2 hidden md:inline-block">Avançe nas setas para montar a página</span>
+                </div>
+                
+                <div class="flex flex-col lg:flex-row gap-8 items-stretch stagger-2 flex-1 pb-8">
+                    <!-- Esquerda: Conceitos -->
+                    <div class="flex-1 flex flex-col justify-center gap-4 z-10 relative">
+                        <div id="box-html" class="bg-white p-5 rounded-2xl border border-slate-200 shadow transition-all duration-500 opacity-40">
+                            <div class="flex items-center gap-3 mb-2"><i class="fa-brands fa-html5 text-orange-500 text-3xl"></i><h3 class="font-bold text-xl text-slate-800">HTML (O Esqueleto)</h3></div>
+                            <p class="text-slate-600 text-sm">Define a estrutura e o conteúdo. O que é um título, o que é um texto, o que é uma imagem.</p>
+                        </div>
+                        
+                        <div id="box-css" class="bg-white p-5 rounded-2xl border border-slate-200 shadow transition-all duration-500 opacity-40">
+                            <div class="flex items-center gap-3 mb-2"><i class="fa-brands fa-css3-alt text-blue-500 text-3xl"></i><h3 class="font-bold text-xl text-slate-800">CSS (A Pele / Roupa)</h3></div>
+                            <p class="text-slate-600 text-sm">Define a aparência. Cores, fontes, cantos arredondados, margens e o embelezamento geral.</p>
+                        </div>
+
+                        <div id="box-js" class="bg-white p-5 rounded-2xl border border-slate-200 shadow transition-all duration-500 opacity-40">
+                            <div class="flex items-center gap-3 mb-2"><i class="fa-brands fa-js text-yellow-400 text-3xl"></i><h3 class="font-bold text-xl text-slate-800">JS (O Músculo / Ação)</h3></div>
+                            <p class="text-slate-600 text-sm">JavaScript traz interatividade e inteligência. É ele quem faz botões reagirem aos seus cliques.</p>
+                        </div>
+                    </div>
+
+                    <!-- Direita: Preview Visual -->
+                    <div class="flex-1 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 relative overflow-hidden flex items-center justify-center shadow-inner">
+                        
+                        <div id="vis-dev-0" class="absolute inset-0 flex flex-col items-center justify-center opacity-100 transition-opacity duration-500">
+                             <i class="fa-solid fa-hammer text-4xl text-slate-300 mb-2"></i>
+                             <p class="text-slate-400 font-medium">Área de Montagem</p>
+                        </div>
+
+                        <!-- 1. HTML -->
+                        <div id="vis-dev-1" class="absolute inset-0 code-preview-raw opacity-0 transition-opacity duration-500 pointer-events-none flex flex-col justify-center">
+                            <h3>Minha Apresentação</h3>
+                            <p>Bem vindo ao sistema estruturado apenas com tags HTML.</p>
+                            <ul>
+                                <li>Tópico A</li>
+                                <li>Tópico B</li>
+                            </ul>
+                            <button style="margin-top:20px;">Clique aqui</button>
+                        </div>
+
+                        <!-- 2. CSS (Tailwind styled) -->
+                        <div id="vis-dev-2" class="absolute inset-0 bg-[#e6f1ec] opacity-0 transition-opacity duration-500 pointer-events-none flex flex-col items-center justify-center p-8">
+                            <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm text-center border-t-4 border-[#00703c] transition-all duration-1000 transform translate-y-4">
+                                <h3 class="text-2xl font-bold text-[#00703c] mb-2 font-sans">Minha Apresentação</h3>
+                                <p class="text-slate-600 mb-6 font-sans">Bem vindo ao sistema. Agora com margens, cores e fontes modernas.</p>
+                                <button class="px-6 py-3 bg-[#00703c] text-white rounded-lg font-bold shadow-md inline-block pointer-events-none">Clique aqui</button>
+                            </div>
+                        </div>
+
+                        <!-- 3. JS (Interactive) -->
+                        <div id="vis-dev-3" class="absolute inset-0 bg-[#e6f1ec] opacity-0 transition-opacity duration-500 pointer-events-none flex flex-col items-center justify-center p-8">
+                            <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm text-center border-t-4 border-[#00703c]">
+                                <h3 class="text-2xl font-bold text-[#00703c] mb-2 font-sans">Minha Apresentação</h3>
+                                <p class="text-slate-600 mb-6 font-sans">Agora com vida, movimento e resposta aos seus comandos!</p>
+                                <button class="px-6 py-3 bg-[#00703c] text-white rounded-lg font-bold shadow-md hover:bg-green-700 transition-all hover:scale-110 active:scale-95 flex items-center justify-center gap-2 mx-auto animate-bounce pointer-events-auto cursor-pointer" onclick="this.innerHTML = '<i class=\'fa-solid fa-check\'></i> Você clicou!'; this.classList.replace('bg-[#00703c]', 'bg-blue-600'); this.classList.remove('animate-bounce');">
+                                    <i class="fa-solid fa-hand-pointer"></i> Teste o Clique
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 3: Vantagens (Interativo) -->
         <section class="slide" id="slide-vantagens" data-fragments="3">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12">
                 <div class="stagger-1 text-left mb-6 shrink-0 flex items-center justify-between">
                     <div>
                         <h2 class="text-4xl font-bold text-slate-800">Por que abandonar o formato clássico?</h2>
-                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse mt-2 inline-block">Use a seta direita do teclado para ver as vantagens</span>
+                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse mt-2 inline-block hidden md:inline-block">Use a seta direita para ver as vantagens</span>
                     </div>
                 </div>
                 
@@ -234,13 +375,13 @@
                         </div>
                         <!-- Vis 1: Responsividade (Loop Animation) -->
                         <div id="vis-vant-1" class="absolute inset-0 flex items-center justify-center bg-slate-200 transition-opacity duration-500 z-20 opacity-0 pointer-events-none">
-                            <div class="bg-white border border-slate-300 shadow-xl overflow-hidden flex flex-col transition-all duration-500" id="mock-device" style="width: 320px; height: 220px; border-radius: 8px;">
+                            <div class="bg-white border border-slate-300 shadow-xl overflow-hidden flex flex-col transition-all duration-500 anim-device" id="mock-device">
                                 <div class="bg-slate-800 h-6 w-full flex items-center px-2 gap-1 shrink-0">
                                     <div class="w-2 h-2 rounded-full bg-red-500"></div><div class="w-2 h-2 rounded-full bg-yellow-500"></div><div class="w-2 h-2 rounded-full bg-green-500"></div>
                                 </div>
                                 <div class="p-4 flex-1 flex flex-col gap-2 bg-slate-50 overflow-hidden">
                                     <div class="h-6 bg-green-200 rounded w-2/3 shrink-0"></div>
-                                    <div class="flex gap-2 p-1 content-start w-full h-full transition-all duration-500" id="mock-columns" style="flex-wrap: nowrap;">
+                                    <div class="flex gap-2 p-1 content-start w-full h-full transition-all duration-500 flex-wrap" id="mock-columns">
                                         <div class="bg-white border border-slate-200 flex-auto min-w-[28%] h-16 rounded shadow-sm"></div>
                                         <div class="bg-white border border-slate-200 flex-auto min-w-[28%] h-16 rounded shadow-sm"></div>
                                         <div class="bg-white border border-slate-200 flex-auto min-w-[28%] h-16 rounded shadow-sm"></div>
@@ -268,7 +409,7 @@
             </div>
         </section>
 
-        <!-- Slide 3: Prompt Inicial -->
+        <!-- Slide 4: Prompt Inicial -->
         <section class="slide">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
@@ -307,7 +448,7 @@ Regras absolutas e inegociáveis:
             </div>
         </section>
 
-        <!-- Slide 4: O Poder do Canvas -->
+        <!-- Slide 5: O Poder do Canvas -->
         <section class="slide">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-4 shrink-0">
@@ -340,13 +481,13 @@ Regras absolutas e inegociáveis:
             </div>
         </section>
 
-        <!-- Slide 5: Copiando e Salvando -->
+        <!-- Slide 6: Copiando e Salvando -->
         <section class="slide" id="slide-copiando" data-fragments="3">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12">
                 <div class="stagger-1 flex items-center gap-4 mb-8 shrink-0">
                     <div class="w-12 h-12 rounded-full bg-[#00703c] text-white flex items-center justify-center text-xl font-bold shadow-lg">2</div>
                     <h2 class="text-4xl font-bold text-slate-800">Copiando e Salvando</h2>
-                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse ml-2 hidden md:inline-block">Use a seta direita para avançar</span>
+                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse ml-2 hidden md:inline-block">Use a seta direita para avançar os passos</span>
                 </div>
                 
                 <div class="flex flex-col lg:flex-row gap-12 items-center stagger-2">
@@ -394,7 +535,7 @@ Regras absolutas e inegociáveis:
             </div>
         </section>
 
-        <!-- Slide 6: Segredo da Iteração -->
+        <!-- Slide 7: Segredo da Iteração -->
         <section class="slide">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12">
                 <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
@@ -404,14 +545,14 @@ Regras absolutas e inegociáveis:
                 <p class="stagger-1 text-xl text-slate-600 mb-8 shrink-0">Não aceite a primeira versão. O segredo é pedir para a IA fazer "ajustes finos" progressivos no código que ela acabou de gerar.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 stagger-2 items-stretch h-full pb-8">
                     <div class="prompt-wrapper mb-0 flex flex-col h-full">
-                        <div class="prompt-header"><div class="prompt-title">Inserindo a Logo</div><button class="copy-btn" onclick="copyPrompt(this, 'prompt2')">Copiar</button></div>
+                        <div class="prompt-header"><div class="prompt-title">Inserindo a Logo</div><button class="copy-btn" onclick="copyPrompt(this, 'prompt2')"><i class="fa-regular fa-copy"></i> Copiar</button></div>
                         <div class="prompt-box text-sm flex-1" id="prompt2">Ficou muito bom! Agora, modifique o código atual para incluir um cabeçalho fixo no topo com fundo branco. 
 
 Adicione a seguinte imagem de logo alinhada à esquerda:
 https://www.sistemafaep.org.br/wp-content/uploads/2024/12/Sistema-FAEP-60-anos-300x121.png</div>
                     </div>
                     <div class="prompt-wrapper mb-0 flex flex-col h-full">
-                        <div class="prompt-header"><div class="prompt-title">Melhorando Animações</div><button class="copy-btn" onclick="copyPrompt(this, 'prompt3')">Copiar</button></div>
+                        <div class="prompt-header"><div class="prompt-title">Melhorando Animações</div><button class="copy-btn" onclick="copyPrompt(this, 'prompt3')"><i class="fa-regular fa-copy"></i> Copiar</button></div>
                         <div class="prompt-box text-sm flex-1" id="prompt3">A apresentação está funcionando, mas a troca de slides está muito seca. 
 
 Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os elementos do slide devem vir de baixo para cima ("slide up") sempre que eu avançar.</div>
@@ -420,7 +561,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             </div>
         </section>
 
-        <!-- Slide 7: Netlify Drag and Drop -->
+        <!-- Slide 8: Netlify Drag and Drop -->
         <section class="slide">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-7xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
@@ -461,7 +602,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             </div>
         </section>
 
-        <!-- Slide 8: GitHub Commit Interativo -->
+        <!-- Slide 9: GitHub Commit Interativo -->
         <section class="slide">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-7xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-4 shrink-0">
@@ -523,7 +664,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             </div>
         </section>
 
-        <!-- Slide 9: Configurando Netlify via GitHub (INTERATIVO COM CLIQUE) -->
+        <!-- Slide 10: Configurando Netlify via GitHub (INTERATIVO COM CLIQUE) -->
         <section class="slide" id="slide-netlify-git">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-4 shrink-0">
@@ -585,7 +726,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                                 <div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Branch to deploy</label><div class="bg-white border border-slate-300 px-3 py-2 rounded text-sm text-slate-800 font-mono">main</div></div>
                                 <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Build command</label><div class="bg-white border border-slate-300 px-3 py-2 rounded text-sm text-slate-400 italic">No build command</div></div>
                             </div>
-                            <button id="btnMockDeploy" class="bg-teal-600 text-white px-8 py-3 rounded-lg font-bold shadow-md hover:bg-teal-700 transition-colors w-64" onclick="simulateNetlifyDeploy()">Deploy</button>
+                            <button id="btnMockDeploy" class="bg-teal-600 text-white px-8 py-3 rounded-lg font-bold shadow-md hover:bg-teal-700 transition-colors w-40 text-center" onclick="simulateNetlifyDeploy()">Deploy</button>
                             
                             <div id="net-success-container" class="mt-6 w-full max-w-2xl"></div>
                         </div>
@@ -595,7 +736,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             </div>
         </section>
 
-        <!-- Slide 10: CI/CD -->
+        <!-- Slide 11: CI/CD -->
         <section class="slide">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-4 shrink-0">
@@ -632,7 +773,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             </div>
         </section>
 
-        <!-- Slide 11: Erro Page Not Found -->
+        <!-- Slide 12: Erro Page Not Found -->
         <section class="slide">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
@@ -660,7 +801,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             </div>
         </section>
 
-        <!-- Slide 12: Erro Imagens Quebradas -->
+        <!-- Slide 13: Erro Imagens Quebradas -->
         <section class="slide">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
@@ -688,7 +829,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             </div>
         </section>
 
-        <!-- Slide 13: Erro Responsividade -->
+        <!-- Slide 14: Erro Responsividade -->
         <section class="slide">
             <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
                 <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
@@ -716,7 +857,60 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             </div>
         </section>
 
-        <!-- Slide 14: Fim -->
+        <!-- Slide 15: Custos -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center justify-center gap-4 mb-10 shrink-0 text-center">
+                    <div class="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-wallet"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">Quanto custa tudo isso?</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 stagger-2 items-stretch h-full pb-16">
+                    
+                    <!-- Card IA -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl relative overflow-hidden group hover:-translate-y-2 transition-all">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-purple-100 rounded-bl-full -z-10 group-hover:scale-150 transition-transform duration-500"></div>
+                        <i class="fa-solid fa-robot text-4xl text-purple-600 mb-4 block"></i>
+                        <h3 class="text-2xl font-bold text-slate-800 mb-2">Inteligência Artificial</h3>
+                        <p class="text-slate-500 mb-6">ChatGPT, Gemini ou Claude</p>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <span class="text-slate-700 font-medium"><i class="fa-solid fa-check text-green-500 mr-2"></i>Versões Básicas (3.5 / Gemini)</span>
+                                <span class="font-bold text-green-600">R$ 0,00</span>
+                            </div>
+                            <div class="flex items-center justify-between pb-2">
+                                <span class="text-slate-700 font-medium"><i class="fa-solid fa-crown text-amber-500 mr-2"></i>Versões Pro (GPT-4 / Gemini Adv.)</span>
+                                <span class="font-bold text-slate-500">~ R$ 100/mês</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Hospedagem -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl relative overflow-hidden group hover:-translate-y-2 transition-all">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-teal-100 rounded-bl-full -z-10 group-hover:scale-150 transition-transform duration-500"></div>
+                        <i class="fa-solid fa-server text-4xl text-teal-600 mb-4 block"></i>
+                        <h3 class="text-2xl font-bold text-slate-800 mb-2">Hospedagem & Deploy</h3>
+                        <p class="text-slate-500 mb-6">Netlify & GitHub</p>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <span class="text-slate-700 font-medium"><i class="fa-solid fa-check text-green-500 mr-2"></i>Plano Starter (Para projetos gerais)</span>
+                                <span class="font-bold text-green-600">R$ 0,00</span>
+                            </div>
+                            <p class="text-xs text-slate-400 italic pt-2">O plano gratuito do Netlify oferece impressionantes 100GB de tráfego mensal, o que é mais do que suficiente para apresentações e sites institucionais.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="stagger-3 absolute bottom-12 left-0 w-full text-center">
+                    <p class="text-2xl font-bold text-slate-700">Custo Total Inicial: <span class="text-4xl text-green-600 ml-2">R$ 0,00</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 16: Fim -->
         <section class="slide">
             <div class="w-full h-full flex flex-col items-center justify-center text-center p-8 relative z-10">
                 <div class="stagger-1 w-24 h-24 bg-gradient-to-br from-[#00703c] to-[#10b981] rounded-full flex items-center justify-center text-white text-4xl shadow-2xl mb-8">
@@ -736,6 +930,8 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
 
     </main>
 
+    <!-- Controles Invisíveis de Rodapé -->
+    <div class="bottom-hover-zone"></div>
     <div class="fixed-controls">
         <div class="dots-container" id="dotsContainer"></div>
     </div>
@@ -748,14 +944,14 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
 
         function initTone() {
             if (toneSynth) return;
-            // Cria um synth relaxante/corporativo
             toneSynth = new Tone.PolySynth(Tone.Synth, {
                 oscillator: { type: "sine" },
                 envelope: { attack: 0.5, decay: 0.5, sustain: 0.5, release: 2 }
             }).toDestination();
-            toneSynth.volume.value = -12; // Volume agradável
+            
+            const slider = document.getElementById('volumeSlider');
+            setVolumeFromSlider(slider.value);
 
-            // Sequencia de notas calmas (Acordes simples Cmaj7, Am7, Fmaj7, G7)
             const chords = [
                 ["C4", "E4", "G4", "B4"],
                 ["A3", "C4", "E4", "G4"],
@@ -775,7 +971,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             const container = document.querySelector('.soundbars');
             
             if (!isAudioPlaying) {
-                await Tone.start(); // Requer interação do usuário
+                await Tone.start(); 
                 initTone();
                 Tone.Transport.start();
                 toneSequence.start(0);
@@ -795,6 +991,16 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             }
         }
 
+        function setVolumeFromSlider(val) {
+            if (!toneSynth) return;
+            if (val == 0) { toneSynth.volume.value = -Infinity; } 
+            else { toneSynth.volume.value = (val - 100) / 2.5; }
+        }
+
+        document.getElementById('volumeSlider').addEventListener('input', (e) => {
+            setVolumeFromSlider(e.target.value);
+        });
+
         // --- SISTEMA DE NAVEGAÇÃO DE SLIDES ---
         let currentSlide = 0;
         let currentFragment = 0;
@@ -803,6 +1009,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
         const totalSlides = slides.length;
         const dotsContainer = document.getElementById('dotsContainer');
         const progressBar = document.getElementById('progressBar');
+        const btnBackIndex = document.getElementById('btnBackIndex');
 
         for (let i = 0; i < totalSlides; i++) {
             const dot = document.createElement('div');
@@ -824,6 +1031,15 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             });
             dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentSlide); });
             progressBar.style.width = `${(currentSlide / (totalSlides - 1)) * 100}%`;
+
+            // Controle do botão de "Voltar ao Índice" (Slide 0 = Capa, Slide 1 = Índice)
+            if(currentSlide <= 1) { 
+                btnBackIndex.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+                btnBackIndex.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+            } else {
+                btnBackIndex.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                btnBackIndex.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+            }
         }
 
         function nextAction() {
@@ -858,8 +1074,47 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
 
         let typeWriterInterval = null;
 
+        // --- SISTEMA DE FRAGMENTOS VISUAIS ---
         function processVisualFragments(slide, fragIdx) {
-            // Fragmentos Vantagens
+            
+            // Fragmentos Slide 1: Índice
+            if (slide.id === 'slide-indice') {
+                for(let i=1; i<=6; i++) {
+                    const item = document.getElementById(`idx-${i}`);
+                    if(item) {
+                        if (i === fragIdx) {
+                            item.classList.remove('opacity-60'); 
+                            item.classList.add('opacity-100', 'ring-2', 'ring-green-500', 'scale-105', 'z-10');
+                        } else {
+                            item.classList.remove('opacity-100', 'ring-2', 'ring-green-500', 'scale-105', 'z-10');
+                            item.classList.add('opacity-60');
+                        }
+                    }
+                }
+            }
+
+            // Fragmentos Slide 2: HTML/CSS/JS
+            if (slide.id === 'slide-htmlcss') {
+                const boxes = [document.getElementById('box-html'), document.getElementById('box-css'), document.getElementById('box-js')];
+                const vis = [document.getElementById('vis-dev-0'), document.getElementById('vis-dev-1'), document.getElementById('vis-dev-2'), document.getElementById('vis-dev-3')];
+                
+                boxes.forEach((box, idx) => {
+                    if (idx + 1 === fragIdx) {
+                        box.classList.remove('opacity-40'); box.classList.add('ring-2', 'ring-blue-500', 'scale-105', 'z-10');
+                    } else if (idx + 1 < fragIdx) {
+                        box.classList.remove('opacity-40', 'ring-2', 'ring-blue-500', 'scale-105', 'z-10');
+                    } else {
+                        box.classList.add('opacity-40'); box.classList.remove('ring-2', 'ring-blue-500', 'scale-105', 'z-10');
+                    }
+                });
+
+                vis.forEach((v, idx) => {
+                    if(idx === fragIdx) { v.style.opacity = 1; v.classList.remove('pointer-events-none'); }
+                    else { v.style.opacity = 0; v.classList.add('pointer-events-none'); }
+                });
+            }
+
+            // Fragmentos Slide 3: Vantagens
             if (slide.id === 'slide-vantagens') {
                 const vants = [document.getElementById('vant-1'), document.getElementById('vant-2'), document.getElementById('vant-3')];
                 const dev = document.getElementById('mock-device'); const cols = document.getElementById('mock-columns');
@@ -874,9 +1129,11 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                         iconBox.classList.replace('bg-[#00703c]', 'bg-slate-100'); iconBox.classList.replace('text-white', 'text-slate-600');
                     }
                 });
+
                 const vis0 = document.getElementById('vis-vant-0'); const vis1 = document.getElementById('vis-vant-1');
                 const vis2 = document.getElementById('vis-vant-2'); const vis3 = document.getElementById('vis-vant-3');
                 if(typeWriterInterval) clearInterval(typeWriterInterval);
+
                 if (fragIdx === 0) {
                     vis0.style.opacity = 1; vis1.style.opacity = 0; vis2.style.opacity = 0; vis3.style.opacity = 0;
                     if(dev) dev.classList.remove('anim-device'); if(cols) cols.style.flexWrap = 'nowrap';
@@ -898,7 +1155,7 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                 }
             }
 
-            // Fragmentos Copiando
+            // Fragmentos Slide: Copiando
             if (slide.id === 'slide-copiando') {
                 const steps = [document.getElementById('step-A'), document.getElementById('step-B'), document.getElementById('step-C')];
                 steps.forEach((step, idx) => {
@@ -912,9 +1169,11 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                         numberBox.classList.remove('bg-[#00703c]', 'text-white'); numberBox.classList.add('bg-slate-100', 'text-slate-600');
                     }
                 });
+
                 const visA = document.getElementById('vis-step-A'); const visB = document.getElementById('vis-step-B');
                 const visC = document.getElementById('vis-step-C'); const copyBtn = document.getElementById('mockup-copy-btn');
                 const modalBox = document.getElementById('save-modal-box');
+
                 if (fragIdx === 0) {
                     visA.style.opacity = 1; visB.style.opacity = 0; visC.style.opacity = 0; copyBtn.classList.remove('ring-4', 'ring-green-400', 'bg-green-600', 'scale-110');
                 } else if (fragIdx === 1) {
@@ -925,29 +1184,57 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                     visA.style.opacity = 0; visB.style.opacity = 1; visC.style.opacity = 1; modalBox.classList.replace('scale-95', 'scale-100');
                 }
             }
+
+            // Fragmentos Slide: Configurando Netlify via GitHub
+            if (slide.id === 'slide-netlify-git') {
+                const vis0 = document.getElementById('vis-net-0'); const vis1 = document.getElementById('vis-net-1');
+                const vis2 = document.getElementById('vis-net-2'); const vis3 = document.getElementById('vis-net-3');
+                
+                if (fragIdx === 0) {
+                    vis0.style.opacity = 1; vis1.style.opacity = 0; vis2.style.opacity = 0; vis3.style.opacity = 0;
+                    vis0.classList.remove('pointer-events-none'); vis1.classList.add('pointer-events-none'); vis2.classList.add('pointer-events-none'); vis3.classList.add('pointer-events-none');
+                } else if (fragIdx === 1) {
+                    vis0.style.opacity = 0; vis1.style.opacity = 1; vis2.style.opacity = 0; vis3.style.opacity = 0;
+                    vis0.classList.add('pointer-events-none'); vis1.classList.remove('pointer-events-none');
+                } else if (fragIdx === 2) {
+                    vis0.style.opacity = 0; vis1.style.opacity = 0; vis2.style.opacity = 1; vis3.style.opacity = 0;
+                    vis1.classList.add('pointer-events-none'); vis2.classList.remove('pointer-events-none');
+                } else if (fragIdx === 3) {
+                    vis0.style.opacity = 0; vis1.style.opacity = 0; vis2.style.opacity = 0; vis3.style.opacity = 1;
+                    vis2.classList.add('pointer-events-none'); vis3.classList.remove('pointer-events-none');
+                    
+                    const btn = document.getElementById('btnMockDeploy');
+                    setTimeout(() => {
+                        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Deploying...';
+                        setTimeout(() => {
+                            btn.innerHTML = '<i class="fa-solid fa-check"></i> Site is live!';
+                            btn.classList.replace('bg-teal-600', 'bg-emerald-500'); btn.classList.replace('hover:bg-teal-700', 'hover:bg-emerald-600');
+                        }, 1500);
+                    }, 800);
+                }
+            }
         }
 
+        // --- SISTEMA UI E EVENTOS ---
         function copyPrompt(btnElement, elementId) {
             const textToCopy = document.getElementById(elementId).innerText.trim();
             const textArea = document.createElement("textarea");
             textArea.value = textToCopy;
             document.body.appendChild(textArea);
             textArea.select();
-            
             try {
                 document.execCommand('copy');
                 const originalHtml = btnElement.innerHTML;
                 btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Copiado!';
                 btnElement.style.background = 'rgba(16, 185, 129, 0.2)'; btnElement.style.color = '#10b981'; 
                 setTimeout(() => { btnElement.innerHTML = originalHtml; btnElement.style.background = ''; btnElement.style.color = ''; }, 2000);
-            } catch (err) {
-                console.error('Falha ao copiar texto', err);
-            }
-            
+            } catch (err) { console.error('Falha ao copiar texto', err); }
             document.body.removeChild(textArea);
         }
 
-        function revelarDica() { document.getElementById('btnDica').style.display = 'none'; document.getElementById('dicaOuro').classList.remove('hidden'); }
+        function revelarDica() {
+            document.getElementById('btnDica').style.display = 'none'; document.getElementById('dicaOuro').classList.remove('hidden');
+        }
         
         function toggleCanvas() {
             const codeView = document.getElementById('canvas-code-view'); const previewView = document.getElementById('canvas-preview-view'); const btn = document.getElementById('btnCanvasToggle');
@@ -964,10 +1251,16 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
         const draggableFile = document.getElementById('draggable-file'); const dropzone = document.getElementById('dropzone'); const btnUpload = document.getElementById('btnUploadAnim');
         let isFileDropped = false;
         
-        draggableFile.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', 'index.html'); setTimeout(() => { draggableFile.style.opacity = '0.4'; }, 0); });
-        draggableFile.addEventListener('dragend', () => { draggableFile.style.opacity = '1'; if (isFileDropped) draggableFile.style.display = 'none'; });
-        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-blue-500', 'bg-blue-50'); document.getElementById('drop-bg-fx').style.opacity = '1'; });
-        dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('border-blue-500', 'bg-blue-50'); document.getElementById('drop-bg-fx').style.opacity = '0'; });
+        if (draggableFile) {
+            draggableFile.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', 'index.html'); setTimeout(() => { draggableFile.style.opacity = '0.4'; }, 0); });
+            draggableFile.addEventListener('dragend', () => { draggableFile.style.opacity = '1'; if (isFileDropped) draggableFile.style.display = 'none'; });
+            draggableFile.addEventListener('click', () => { completeDrop(); });
+        }
+        if (dropzone) {
+            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-blue-500', 'bg-blue-50'); document.getElementById('drop-bg-fx').style.opacity = '1'; });
+            dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('border-blue-500', 'bg-blue-50'); document.getElementById('drop-bg-fx').style.opacity = '0'; });
+            dropzone.addEventListener('drop', (e) => { e.preventDefault(); completeDrop(); });
+        }
         
         function completeDrop() {
             isFileDropped = true; draggableFile.style.display = 'none';
@@ -977,8 +1270,6 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             document.getElementById('drop-desc').innerText = "Pronto para deploy.";
             btnUpload.disabled = false; btnUpload.classList.remove('bg-slate-400'); btnUpload.classList.add('animate-pulse'); setTimeout(() => btnUpload.classList.remove('animate-pulse'), 1000);
         }
-        dropzone.addEventListener('drop', (e) => { e.preventDefault(); completeDrop(); });
-        draggableFile.addEventListener('click', () => { completeDrop(); });
 
         function simulateUpload() {
             btnUpload.disabled = true; btnUpload.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-xl"></i> Processando...';
@@ -994,23 +1285,18 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
         function resetDragDrop() {
             isFileDropped = false;
             draggableFile.style.display = 'flex';
-            
             dropzone.innerHTML = `
                 <div class="absolute inset-0 bg-blue-500/5 rounded-3xl opacity-0 transition-opacity" id="drop-bg-fx"></div>
-                <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 transition-colors pointer-events-none" id="drop-icon-container">
-                    <i id="drop-icon" class="fa-solid fa-cloud-arrow-up text-5xl text-slate-400 transition-colors"></i>
-                </div>
-                <h4 id="drop-title" class="text-3xl font-bold text-slate-700 mb-2 pointer-events-none">Drag and drop</h4>
-                <p id="drop-desc" class="text-slate-500 pointer-events-none">solte o arquivo aqui para publicar</p>
+                <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 transition-colors pointer-events-none" id="drop-icon-container"><i id="drop-icon" class="fa-solid fa-cloud-arrow-up text-5xl text-slate-400 transition-colors"></i></div>
+                <h4 id="drop-title" class="text-3xl font-bold text-slate-700 mb-2 pointer-events-none">Drag and drop</h4><p id="drop-desc" class="text-slate-500 pointer-events-none">solte o arquivo aqui para publicar</p>
             `;
             dropzone.className = "relative bg-white p-8 rounded-3xl shadow-xl border-2 border-dashed border-slate-300 flex-1 flex flex-col items-center justify-center text-center transition-colors duration-300";
-            
             btnUpload.disabled = true;
             btnUpload.className = "shrink-0 px-6 py-5 bg-blue-600 text-white rounded-2xl transition-all font-bold text-lg shadow-lg flex items-center justify-center w-full gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:bg-slate-400 hover:bg-blue-700 hover:-translate-y-1";
             btnUpload.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-2xl"></i> Fazer Upload do Arquivo';
         }
         
-        // --- SISTEMA GITHUB COMMIT ---
+        // --- SISTEMA GITHUB COMMIT E NETLIFY VIA GITHUB ---
         function simulateGitCommit() {
             const btn = document.getElementById('btnGitCommit');
             const nameInput = document.getElementById('gh-input-name').value.trim().toLowerCase();
@@ -1018,18 +1304,12 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             const overlay = document.getElementById('git-success-overlay');
 
             if (nameInput !== 'index.html') {
-                const oldText = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> O nome deve ser index.html';
-                btn.classList.replace('bg-[#2da44e]', 'bg-red-500'); btn.classList.replace('hover:bg-[#2c974b]', 'hover:bg-red-600');
-                setTimeout(() => { btn.innerHTML = oldText; btn.classList.replace('bg-red-500', 'bg-[#2da44e]'); btn.classList.replace('hover:bg-red-600', 'hover:bg-[#2c974b]'); }, 2500);
-                return;
+                const oldText = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-xmark"></i> O nome deve ser index.html'; btn.classList.replace('bg-[#2da44e]', 'bg-red-500'); btn.classList.replace('hover:bg-[#2c974b]', 'hover:bg-red-600');
+                setTimeout(() => { btn.innerHTML = oldText; btn.classList.replace('bg-red-500', 'bg-[#2da44e]'); btn.classList.replace('hover:bg-red-600', 'hover:bg-[#2c974b]'); }, 2500); return;
             }
             if (codeInput === '') {
-                const oldText = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Cole o código primeiro!';
-                btn.classList.replace('bg-[#2da44e]', 'bg-amber-500'); btn.classList.replace('hover:bg-[#2c974b]', 'hover:bg-amber-600');
-                setTimeout(() => { btn.innerHTML = oldText; btn.classList.replace('bg-amber-500', 'bg-[#2da44e]'); btn.classList.replace('hover:bg-amber-600', 'hover:bg-[#2c974b]'); }, 2500);
-                return;
+                const oldText = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Cole o código primeiro!'; btn.classList.replace('bg-[#2da44e]', 'bg-amber-500'); btn.classList.replace('hover:bg-[#2c974b]', 'hover:bg-amber-600');
+                setTimeout(() => { btn.innerHTML = oldText; btn.classList.replace('bg-amber-500', 'bg-[#2da44e]'); btn.classList.replace('hover:bg-amber-600', 'hover:bg-[#2c974b]'); }, 2500); return;
             }
 
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
@@ -1037,49 +1317,20 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
         }
 
         function resetGithub() {
-            document.getElementById('gh-input-name').value = '';
-            document.getElementById('gh-input-code').value = '';
-            const overlay = document.getElementById('git-success-overlay');
-            overlay.classList.add('hidden'); overlay.classList.remove('flex');
-            const btn = document.getElementById('btnGitCommit');
-            btn.innerHTML = 'Commit changes';
+            document.getElementById('gh-input-name').value = ''; document.getElementById('gh-input-code').value = '';
+            const overlay = document.getElementById('git-success-overlay'); overlay.classList.add('hidden'); overlay.classList.remove('flex');
+            const btn = document.getElementById('btnGitCommit'); btn.innerHTML = 'Commit changes';
         }
 
-        // --- SISTEMA NETLIFY VIA GITHUB (CLIQUE) ---
-        function setNetlifyStep(step) {
-            const vis = [document.getElementById('vis-net-0'), document.getElementById('vis-net-1'), document.getElementById('vis-net-2'), document.getElementById('vis-net-3')];
-            vis.forEach((v, i) => {
-                if (i === step) {
-                    v.style.opacity = 1; v.classList.remove('pointer-events-none');
-                } else {
-                    v.style.opacity = 0; v.classList.add('pointer-events-none');
-                }
-            });
-        }
-
-        function simulateNetlifyDeploy() {
-            const btn = document.getElementById('btnMockDeploy');
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Deploying...';
-            btn.disabled = true;
-            setTimeout(() => {
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Site is live!';
-                btn.classList.replace('bg-teal-600', 'bg-emerald-500'); 
-                btn.classList.replace('hover:bg-teal-700', 'hover:bg-emerald-600');
-                document.getElementById('net-success-container').innerHTML = `<a href="#" class="block text-center text-blue-600 font-bold bg-blue-50 px-5 py-3 rounded-xl shadow border border-blue-100 hover:bg-blue-100 transition"><i class="fa-solid fa-link"></i> faep-inovacao.netlify.app</a>`;
-            }, 1500);
-        }
+        function setNetlifyStep(step) { processVisualFragments(document.getElementById('slide-netlify-git'), step); }
 
         function resetNetlifyFlow() {
             setNetlifyStep(0);
             const btn = document.getElementById('btnMockDeploy');
             btn.innerHTML = 'Deploy';
-            btn.classList.replace('bg-emerald-500', 'bg-teal-600');
-            btn.classList.replace('hover:bg-emerald-600', 'hover:bg-teal-700');
-            btn.disabled = false;
-            document.getElementById('net-success-container').innerHTML = '';
+            btn.classList.replace('bg-emerald-500', 'bg-teal-600'); btn.classList.replace('hover:bg-emerald-600', 'hover:bg-teal-700');
         }
         
-        // --- SISTEMA CI/CD ---
         function triggerDeploy() {
             const pulse = document.getElementById('deploy-pulse'); const status = document.getElementById('deployStatus'); const btn = document.getElementById('btnDeploy');
             btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -1100,15 +1351,12 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
         }
 
         function resetCICD() {
-            const btn = document.getElementById('btnDeploy');
-            const pulse = document.getElementById('deploy-pulse'); 
-            const status = document.getElementById('deployStatus');
+            const btn = document.getElementById('btnDeploy'); const pulse = document.getElementById('deploy-pulse'); const status = document.getElementById('deployStatus');
             btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed');
             pulse.classList.add('hidden'); pulse.classList.replace('bg-teal-400', 'bg-blue-500'); pulse.style.animation = '';
             status.classList.add('hidden'); status.classList.replace('text-teal-700', 'text-slate-600'); status.classList.replace('bg-teal-50', 'bg-slate-100');
         }
 
-        // --- SISTEMA IA (ERROS) ---
         function simulateAIResponse(btnId, blockId) {
             const btn = document.getElementById(btnId); const block = document.getElementById(blockId);
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-xl"></i> Processando...';
@@ -1116,11 +1364,12 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
             setTimeout(() => { btn.style.display = 'none'; block.classList.remove('hidden'); }, 1200);
         }
 
-        // Teclado
+        // --- NAVEGAÇÃO DE TECLADO ---
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight' || e.key === ' ') nextAction(); else if (e.key === 'ArrowLeft') prevAction();
         });
 
+        // Initialize UI no carregamento
         updateUI();
     </script>
 </body>
