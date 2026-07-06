@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentações com IA e Netlify - Sistema FAEP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Adicionando Tone.js para gerar a música de fundo corporativa -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <style>
+        :root {
+            --faep-green: #00703c;
+            --faep-light-green: #e6f1ec;
+            --faep-dark: #1e293b;
+            --faep-gray: #f8fafc;
+            --faep-accent: #10b981;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--faep-gray);
+            color: var(--faep-dark);
+        }
+
+        /* Blobs Background */
+        .bg-blobs {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -2; overflow: hidden; background: #f8fafc;
+        }
+        .blob {
+            position: absolute; border-radius: 50%; filter: blur(80px);
+            opacity: 0.4; animation: float 20s infinite ease-in-out alternate;
+        }
+        .blob-1 { width: 500px; height: 500px; background: #bbf7d0; top: -100px; left: -100px; animation-delay: 0s; }
+        .blob-2 { width: 400px; height: 400px; background: #e0f2fe; bottom: -50px; right: -50px; animation-delay: -5s; }
+        .blob-3 { width: 300px; height: 300px; background: #dcfce7; top: 40%; left: 40%; animation-delay: -10s; }
+
+        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.1); } }
+
+        .slide-container { position: relative; width: 100vw; height: 100vh; }
+        .slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; visibility: hidden; opacity: 0;
+            pointer-events: none; transform: translateX(100px) scale(0.95);
+            filter: blur(8px); transition: all 0.8s cubic-bezier(0.25, 1, 0.2, 1);
+        }
+        .slide.active {
+            visibility: visible; opacity: 1; pointer-events: auto;
+            transform: translateX(0) scale(1); filter: blur(0); z-index: 10;
+        }
+        .slide.past { transform: translateX(-100px) scale(0.95); filter: blur(8px); }
+
+        .slide .stagger-1, .slide .stagger-2, .slide .stagger-3 {
+            opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.25, 1, 0.2, 1);
+        }
+        .slide.active .stagger-1 { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+        .slide.active .stagger-2 { opacity: 1; transform: translateY(0); transition-delay: 0.35s; }
+        .slide.active .stagger-3 { opacity: 1; transform: translateY(0); transition-delay: 0.5s; }
+
+        .glass-header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 80px;
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); display: flex; align-items: center;
+            padding: 0 40px; z-index: 50;
+        }
+        .glass-header img { height: 40px; object-fit: contain; }
+
+        .fixed-controls {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 50; display: flex; gap: 20px; align-items: center;
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px);
+            padding: 10px 20px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .dots-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 300px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background-color: #cbd5e1; transition: all 0.3s ease; cursor: pointer; }
+        .dot.active { background-color: var(--faep-green); width: 24px; border-radius: 10px; }
+
+        .progress-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background-color: transparent; z-index: 60; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--faep-green), var(--faep-accent)); width: 0%; transition: width 0.4s ease-out; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.5); }
+
+        /* Animação do Som */
+        .soundbars .bar { transition: height 0.1s ease; }
+        .soundbars.playing .bar { animation: soundbar-bounce 0.8s infinite alternate ease-in-out; }
+        .soundbars.playing .bar:nth-child(1) { animation-delay: 0s; }
+        .soundbars.playing .bar:nth-child(2) { animation-delay: 0.2s; }
+        .soundbars.playing .bar:nth-child(3) { animation-delay: 0.4s; }
+        .soundbars.playing .bar:nth-child(4) { animation-delay: 0.6s; }
+        @keyframes soundbar-bounce { 0% { height: 4px; } 100% { height: 16px; } }
+
+        /* Prompts & Code Blocks */
+        .prompt-wrapper { position: relative; transition: transform 0.3s ease; }
+        .prompt-wrapper:hover { transform: translateY(-2px); }
+        .prompt-box {
+            background-color: #0f172a; color: #38bdf8; border: 1px solid #1e293b;
+            border-radius: 1rem; padding: 3rem 1.5rem 1.5rem 1.5rem; font-family: 'Consolas', monospace;
+            font-size: 1.05rem; line-height: 1.6; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; max-height: 450px;
+        }
+        .prompt-box::-webkit-scrollbar { width: 8px; }
+        .prompt-box::-webkit-scrollbar-track { background: #0f172a; border-radius: 8px; }
+        .prompt-box::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+        .prompt-box::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        .prompt-header {
+            position: absolute; top: 0; left: 0; width: 100%; padding: 8px 15px;
+            background: #1e293b; border-top-left-radius: 1rem; border-top-right-radius: 1rem;
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; z-index: 5;
+        }
+        .prompt-title { color: #94a3b8; font-size: 0.8rem; font-family: 'Outfit', sans-serif; display: flex; align-items: center; gap: 6px; }
+        .copy-btn {
+            background: rgba(255,255,255,0.1); color: #f8fafc; border: none; padding: 4px 10px;
+            border-radius: 6px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 5px;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.2); }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes blink { 50% { border-color: transparent; } }
+        
+        @keyframes deviceResize {
+            0%, 100% { width: 320px; height: 220px; border-radius: 8px; }
+            45%, 55% { width: 140px; height: 280px; border-radius: 20px; }
+        }
+        .anim-device { animation: deviceResize 5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+        @keyframes slideRight {
+            0% { transform: translateX(-100%); width: 20%; opacity: 1; }
+            50% { width: 40%; }
+            100% { transform: translateX(500%); width: 20%; opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .glass-header { padding: 0 20px; height: 60px; }
+            .glass-header img { height: 30px; }
+            .prompt-box { font-size: 0.9rem; }
+            .dots-container { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
+
+    <header class="glass-header">
+        <div class="flex items-center gap-4 w-full justify-between">
+            <img src="https://www.sistemafaep.org.br/wp-content/uploads/2024/12/Sistema-FAEP-60-anos-300x121.png" alt="Logo Sistema FAEP">
+            
+            <!-- Botão de Som -->
+            <div id="audio-toggle" onclick="toggleAudio()" class="flex items-center gap-3 cursor-pointer bg-slate-100/50 hover:bg-slate-200/80 px-4 py-2 rounded-full transition border border-slate-200/50 shadow-sm" title="Ligar/Desligar Música">
+                <div class="soundbars flex items-end gap-[3px] h-[16px] w-[20px]">
+                    <div class="bar w-[3px] bg-slate-400 rounded-t-sm h-[4px]"></div>
+                    <div class="bar w-[3px] bg-slate-400 rounded-t-sm h-[8px]"></div>
+                    <div class="bar w-[3px] bg-slate-400 rounded-t-sm h-[5px]"></div>
+                    <div class="bar w-[3px] bg-slate-400 rounded-t-sm h-[10px]"></div>
+                </div>
+                <i class="fa-solid fa-volume-xmark text-slate-400 text-sm" id="audio-icon"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="slide-container" id="slideContainer">
+        
+        <!-- Slide 1: Capa -->
+        <section class="slide active">
+            <video src="Fundo.mp4" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-[0.15] z-[-1] pointer-events-none"></video>
+            <div class="relative z-10 w-full h-full flex flex-col items-center justify-center text-center p-8">
+                <div class="stagger-1 inline-block mb-6 px-4 py-2 bg-green-100/80 backdrop-blur text-green-800 rounded-full text-sm font-bold tracking-wide uppercase border border-green-200 shadow-sm">Inovação na Comunicação</div>
+                <h1 class="stagger-2 text-5xl md:text-7xl font-extrabold mb-6 text-slate-800 leading-tight">
+                    Apresentações Web <br>com <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00703c] to-[#10b981]">Inteligência Artificial</span>
+                </h1>
+                <p class="stagger-3 text-xl text-slate-800 font-medium mb-10 max-w-2xl drop-shadow-md">
+                    Transforme ideias em slides interativos usando o poder do ChatGPT ou Gemini e publique-os na web em segundos. Sem precisar programar.
+                </p>
+                <div class="stagger-3 mt-8">
+                    <button onclick="nextAction()" class="group relative px-8 py-4 bg-[#00703c] text-white rounded-full font-semibold text-lg overflow-hidden shadow-[0_10px_20px_rgba(0,112,60,0.3)] transition-all hover:scale-105 hover:shadow-[0_15px_30px_rgba(0,112,60,0.4)]">
+                        <div class="absolute inset-0 w-full h-full bg-white/20 scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-full"></div>
+                        <span class="relative flex items-center gap-2">Iniciar Jornada <i class="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"></i></span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 2: Vantagens (Interativo) -->
+        <section class="slide" id="slide-vantagens" data-fragments="3">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12">
+                <div class="stagger-1 text-left mb-6 shrink-0 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-4xl font-bold text-slate-800">Por que abandonar o formato clássico?</h2>
+                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse mt-2 inline-block">Use a seta direita do teclado para ver as vantagens</span>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col lg:flex-row gap-12 items-center stagger-2 h-full pb-8">
+                    <div class="flex-1 space-y-4 w-full relative z-10 flex flex-col justify-center">
+                        <div id="vant-1" class="copy-step flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 transition-all duration-500 opacity-40">
+                            <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 transition-colors text-2xl"><i class="fa-solid fa-mobile-screen-button"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-800">Responsividade Total</h3>
+                                <p class="text-slate-600 text-sm pt-1">O layout se adapta a qualquer tela: celular, tablet ou projetor, sem quebrar as imagens.</p>
+                            </div>
+                        </div>
+                        <div id="vant-2" class="copy-step flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 transition-all duration-500 opacity-40">
+                            <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 transition-colors text-2xl"><i class="fa-solid fa-link"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-800">Acesso Universal</h3>
+                                <p class="text-slate-600 text-sm pt-1">Envie apenas um link da web. Sem downloads pesados ou incompatibilidade de software.</p>
+                            </div>
+                        </div>
+                        <div id="vant-3" class="copy-step flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 transition-all duration-500 opacity-40">
+                            <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 transition-colors text-2xl"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-800">Geração por IA</h3>
+                                <p class="text-slate-600 text-sm pt-1">Crie conteúdo, estrutura e design instantaneamente com prompts precisos.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 w-full relative h-[360px] rounded-2xl overflow-hidden shadow-2xl border border-slate-300 bg-white flex items-center justify-center">
+                        <div id="vis-vant-0" class="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 z-10 opacity-100 bg-slate-50 text-slate-400">
+                             <i class="fa-solid fa-eye text-6xl mb-4 opacity-30"></i><p class="font-medium">Avançe para ver na prática</p>
+                        </div>
+                        <!-- Vis 1: Responsividade (Loop Animation) -->
+                        <div id="vis-vant-1" class="absolute inset-0 flex items-center justify-center bg-slate-200 transition-opacity duration-500 z-20 opacity-0 pointer-events-none">
+                            <div class="bg-white border border-slate-300 shadow-xl overflow-hidden flex flex-col transition-all duration-500" id="mock-device" style="width: 320px; height: 220px; border-radius: 8px;">
+                                <div class="bg-slate-800 h-6 w-full flex items-center px-2 gap-1 shrink-0">
+                                    <div class="w-2 h-2 rounded-full bg-red-500"></div><div class="w-2 h-2 rounded-full bg-yellow-500"></div><div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                </div>
+                                <div class="p-4 flex-1 flex flex-col gap-2 bg-slate-50 overflow-hidden">
+                                    <div class="h-6 bg-green-200 rounded w-2/3 shrink-0"></div>
+                                    <div class="flex gap-2 p-1 content-start w-full h-full transition-all duration-500" id="mock-columns" style="flex-wrap: nowrap;">
+                                        <div class="bg-white border border-slate-200 flex-auto min-w-[28%] h-16 rounded shadow-sm"></div>
+                                        <div class="bg-white border border-slate-200 flex-auto min-w-[28%] h-16 rounded shadow-sm"></div>
+                                        <div class="bg-white border border-slate-200 flex-auto min-w-[28%] h-16 rounded shadow-sm"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Vis 2 -->
+                        <div id="vis-vant-2" class="absolute inset-0 bg-[#efeae2] flex items-center justify-center transition-opacity duration-500 z-30 opacity-0 pointer-events-none p-6">
+                            <div class="bg-white rounded-xl shadow-md w-full max-w-sm h-full flex flex-col overflow-hidden border border-slate-200">
+                                <div class="bg-[#00a884] h-14 flex items-center px-4 text-white font-bold gap-3 shrink-0"><div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center"><i class="fa-solid fa-user"></i></div>Grupo Diretoria FAEP</div>
+                                <div class="flex-1 bg-[#efeae2] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] p-4 flex flex-col gap-3 relative justify-end pb-6">
+                                    <div class="bg-white p-3 rounded-xl rounded-tl-none self-start max-w-[85%] shadow text-sm text-slate-700">Bom dia! A apresentação está pronta?</div>
+                                    <div class="bg-[#d9fdd3] p-3 rounded-xl rounded-tr-none self-end max-w-[85%] shadow text-sm text-slate-700 transform translate-y-6 opacity-0 transition-all duration-700 delay-300" id="msg-link">Sim! Só abrir pelo navegador do celular ou PC:<br><a href="#" class="text-blue-500 underline break-all font-semibold mt-1 inline-block"><i class="fa-solid fa-link"></i> faep-apresentacao.netlify.app</a></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Vis 3 -->
+                        <div id="vis-vant-3" class="absolute inset-0 bg-[#1e1e1e] flex flex-col transition-opacity duration-500 z-40 opacity-0 pointer-events-none text-white font-mono text-sm">
+                            <div class="bg-slate-800 p-2 text-xs text-slate-400 border-b border-slate-700 flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> ChatGPT Gerando index.html</div>
+                            <div class="p-4 overflow-hidden flex-1"><div id="typing-code" class="text-emerald-400 border-r-2 border-white pr-1 whitespace-pre leading-relaxed text-xs md:text-sm"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 3: Prompt Inicial -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-[#00703c] text-white flex items-center justify-center text-xl font-bold shadow-lg">1</div>
+                    <h2 class="text-4xl font-bold text-slate-800">O Prompt Inicial (O Pedido)</h2>
+                </div>
+                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">Para um bom resultado, seja claro com a IA. Especifique o formato, o design e o conteúdo.</p>
+                
+                <div class="stagger-2 prompt-wrapper shrink-0">
+                    <div class="prompt-header">
+                        <div class="prompt-title"><i class="fa-solid fa-terminal"></i> ChatGPT / Gemini</div>
+                        <button class="copy-btn" onclick="copyPrompt(this, 'prompt1')"><i class="fa-regular fa-copy"></i> Copiar</button>
+                    </div>
+                    <div class="prompt-box" id="prompt1">Aja como um desenvolvedor web sênior especialista em UI/UX. Crie uma apresentação de slides em HTML, CSS e JavaScript.
+
+Regras absolutas e inegociáveis:
+1. Todo o código (HTML, estilo e scripts) deve estar em um ÚNICO arquivo chamado index.html.
+2. Use as cores institucionais do Sistema FAEP (Verde #00703c, tons de cinza e branco).
+3. Adicione botões interativos para avançar e voltar os slides.
+4. Crie 3 slides explicativos sobre "Sustentabilidade no Agronegócio".
+5. O design deve ser moderno, usar a fonte 'Inter' e ser totalmente responsivo.</div>
+                </div>
+                
+                <div class="stagger-3 mt-4 w-full transition-all duration-500 origin-top" id="dicaContainer">
+                    <button id="btnDica" onclick="revelarDica()" class="px-5 py-3 bg-amber-100 text-amber-800 rounded-xl hover:bg-amber-200 transition-colors font-bold flex items-center justify-center gap-2 shadow-sm w-full md:w-auto mx-auto md:mx-0">
+                        <i class="fa-solid fa-lightbulb"></i> Revelar Dica Importante
+                    </button>
+                    <div id="dicaOuro" class="hidden bg-gradient-to-r from-amber-50 to-white border border-amber-200 p-6 rounded-2xl flex items-start gap-4 shadow-lg animate-[fadeInDown_0.4s_ease-out]">
+                        <div class="mt-1 text-amber-500 p-3 bg-amber-100 rounded-full"><i class="fa-solid fa-key text-2xl"></i></div>
+                        <div>
+                            <h4 class="font-bold text-amber-800 text-xl mb-1">A Regra de Ouro</h4>
+                            <p class="text-amber-700 leading-relaxed">Sempre reforce a exigência do <strong>"ÚNICO arquivo index.html"</strong>. Isso elimina a complexidade de gerenciar pastas de imagens, arquivos CSS e JS separados na hora da publicação web.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: O Poder do Canvas -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center gap-4 mb-4 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-laptop-code"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">O Poder do "Canvas"</h2>
+                </div>
+                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">As novas IAs (como o Gemini) possuem ferramentas de preview integradas. Você não precisa nem sair do chat para ver se a apresentação ficou boa.</p>
+                
+                <div class="stagger-2 flex h-[380px] w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-300">
+                    <div class="w-1/3 bg-[#f9fafb] p-4 flex flex-col gap-4 border-r border-slate-200">
+                        <div class="flex items-center gap-2 mb-2"><i class="fa-brands fa-google text-blue-500"></i> <span class="font-bold text-sm text-slate-700">Gemini Canvas</span></div>
+                        <div class="bg-blue-100 p-3 rounded-xl rounded-tl-none text-sm text-blue-900 shadow-sm leading-relaxed">Crie a página da FAEP em HTML único e responsivo.</div>
+                        <div class="bg-white p-3 rounded-xl rounded-tr-none text-sm text-slate-700 shadow-sm border border-slate-100 mt-2 leading-relaxed">Pronto! Cliquei para abrir o Canvas. Você pode ver o código ou visualizar a página real ao lado.</div>
+                        
+                        <button onclick="toggleCanvas()" id="btnCanvasToggle" class="mt-auto px-4 py-3 bg-[#00703c] text-white rounded-lg text-sm font-bold shadow hover:bg-green-700 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play"></i> Alternar para Preview
+                        </button>
+                    </div>
+                    <div class="w-2/3 relative bg-[#1e1e1e]" id="canvas-container">
+                        <div id="canvas-code-view" class="absolute inset-0 p-6 text-emerald-400 font-mono text-sm overflow-auto leading-relaxed">
+<span class="text-slate-400">&lt;!DOCTYPE html&gt;</span><br>&lt;<span class="text-blue-400">html</span>&gt;<br>&lt;<span class="text-blue-400">body</span> <span class="text-blue-200">class</span>=<span class="text-orange-300">"bg-slate-50"</span>&gt;<br><br>&nbsp;&nbsp;&lt;<span class="text-blue-400">header</span> <span class="text-blue-200">class</span>=<span class="text-orange-300">"p-4 bg-white shadow"</span>&gt;<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="text-blue-400">img</span> <span class="text-blue-200">src</span>=<span class="text-orange-300">"logo-faep.png"</span>&gt;<br>&nbsp;&nbsp;&lt;/<span class="text-blue-400">header</span>&gt;<br><br>&nbsp;&nbsp;&lt;<span class="text-blue-400">main</span> <span class="text-blue-200">class</span>=<span class="text-orange-300">"flex flex-col items-center mt-10"</span>&gt;<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="text-blue-400">h1</span> <span class="text-blue-200">class</span>=<span class="text-orange-300">"text-green-700"</span>&gt;Apresentação FAEP&lt;/<span class="text-blue-400">h1</span>&gt;<br>&nbsp;&nbsp;&lt;/<span class="text-blue-400">main</span>&gt;<br><br>&lt;/<span class="text-blue-400">body</span>&gt;<br>&lt;/<span class="text-blue-400">html</span>&gt;
+                        </div>
+                        <div id="canvas-preview-view" class="absolute inset-0 bg-slate-50 hidden flex-col items-center justify-center text-center">
+                            <img src="https://www.sistemafaep.org.br/wp-content/uploads/2024/12/Sistema-FAEP-60-anos-300x121.png" class="h-16 mb-8 drop-shadow-md" alt="Logo FAEP">
+                            <h1 class="text-4xl font-extrabold text-[#00703c]">Apresentação FAEP</h1>
+                            <p class="text-slate-500 mt-4 max-w-sm">A interface renderiza o código instantaneamente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 5: Copiando e Salvando -->
+        <section class="slide" id="slide-copiando" data-fragments="3">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12">
+                <div class="stagger-1 flex items-center gap-4 mb-8 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-[#00703c] text-white flex items-center justify-center text-xl font-bold shadow-lg">2</div>
+                    <h2 class="text-4xl font-bold text-slate-800">Copiando e Salvando</h2>
+                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse ml-2 hidden md:inline-block">Use a seta direita para avançar</span>
+                </div>
+                
+                <div class="flex flex-col lg:flex-row gap-12 items-center stagger-2">
+                    <div class="flex-1 space-y-4 w-full relative z-10">
+                        <div id="step-A" class="copy-step flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 transition-all duration-500 opacity-40">
+                            <div class="w-8 h-8 rounded bg-slate-100 flex items-center justify-center font-bold text-slate-600 shrink-0 transition-colors">A</div>
+                            <p class="text-slate-700 pt-1">Procure o botão <strong>"Copy Code"</strong> no canto superior direito do bloco gerado.</p>
+                        </div>
+                        <div id="step-B" class="copy-step flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 transition-all duration-500 opacity-40">
+                            <div class="w-8 h-8 rounded bg-slate-100 flex items-center justify-center font-bold text-slate-600 shrink-0 transition-colors">B</div>
+                            <p class="text-slate-700 pt-1">Abra o Bloco de Notas ou Editor de Texto e <strong>cole</strong> o conteúdo.</p>
+                        </div>
+                        <div id="step-C" class="copy-step flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 transition-all duration-500 opacity-40">
+                            <div class="w-8 h-8 rounded bg-slate-100 flex items-center justify-center font-bold text-slate-600 shrink-0 transition-colors">C</div>
+                            <p class="text-slate-700 pt-1">Vá em Salvar Como... É crucial nomear <strong>exatamente</strong> como <code class="bg-slate-100 px-2 py-1 rounded text-pink-600 font-bold">index.html</code>.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 w-full relative h-[320px] rounded-xl overflow-hidden shadow-2xl border border-slate-300 bg-slate-50">
+                        <div id="vis-step-A" class="absolute inset-0 bg-[#1e1e1e] flex flex-col transition-opacity duration-500 z-10">
+                            <div class="bg-slate-800 p-2 flex justify-between items-center border-b border-slate-700">
+                                <span class="text-xs text-slate-400 font-mono pl-2">html</span>
+                                <div id="mockup-copy-btn" class="text-xs text-white px-3 py-1.5 rounded bg-slate-700 flex items-center gap-2 transition-all duration-300"><i class="fa-regular fa-copy"></i> Copy code</div>
+                            </div>
+                            <pre class="p-4 text-emerald-400 font-mono text-xs md:text-sm overflow-hidden"><span class="text-slate-400">&lt;!DOCTYPE html&gt;</span>...<br>&lt;<span class="text-blue-400">title</span>&gt;Apresentação FAEP&lt;/<span class="text-blue-400">title</span>&gt;</pre>
+                        </div>
+                        <div id="vis-step-B" class="absolute inset-0 bg-white flex flex-col transition-opacity duration-500 z-20 opacity-0 pointer-events-none">
+                            <div class="bg-[#f0f0f0] p-2 flex items-center gap-2 border-b border-[#ccc]"><i class="fa-solid fa-file-lines text-[#666]"></i><span class="text-sm text-slate-800 font-sans">Sem Título - Bloco de Notas</span></div>
+                            <pre class="p-4 text-slate-800 font-mono text-xs overflow-hidden flex-1">&lt;!DOCTYPE html&gt;<br>&lt;html lang="pt-BR"&gt;<br>... colado aqui ...</pre>
+                        </div>
+                        <div id="vis-step-C" class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center transition-opacity duration-500 z-30 opacity-0 pointer-events-none">
+                            <div class="bg-[#f0f0f0] border border-slate-400 rounded shadow-2xl w-11/12 md:w-4/5 overflow-hidden transform scale-95 transition-transform duration-300" id="save-modal-box">
+                                <div class="bg-white px-3 py-2 flex justify-between items-center border-b border-slate-300"><span class="text-xs font-bold text-slate-800">Salvar Como</span></div>
+                                <div class="p-4 bg-white">
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <span class="text-xs text-slate-600 w-16 text-right">Nome:</span>
+                                        <input type="text" value="index.html" readonly class="flex-1 bg-blue-50 border border-blue-400 text-pink-600 font-bold px-2 py-1 rounded-sm text-sm outline-none shadow-inner">
+                                    </div>
+                                    <div class="flex justify-end gap-2 border-t pt-3"><div class="px-6 py-1.5 bg-blue-600 text-white rounded-sm text-xs font-bold shadow-sm cursor-pointer">Salvar</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: Segredo da Iteração -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12">
+                <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-[#00703c] text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-rotate"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">O Segredo da Iteração</h2>
+                </div>
+                <p class="stagger-1 text-xl text-slate-600 mb-8 shrink-0">Não aceite a primeira versão. O segredo é pedir para a IA fazer "ajustes finos" progressivos no código que ela acabou de gerar.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 stagger-2 items-stretch h-full pb-8">
+                    <div class="prompt-wrapper mb-0 flex flex-col h-full">
+                        <div class="prompt-header"><div class="prompt-title">Inserindo a Logo</div><button class="copy-btn" onclick="copyPrompt(this, 'prompt2')">Copiar</button></div>
+                        <div class="prompt-box text-sm flex-1" id="prompt2">Ficou muito bom! Agora, modifique o código atual para incluir um cabeçalho fixo no topo com fundo branco. 
+
+Adicione a seguinte imagem de logo alinhada à esquerda:
+https://www.sistemafaep.org.br/wp-content/uploads/2024/12/Sistema-FAEP-60-anos-300x121.png</div>
+                    </div>
+                    <div class="prompt-wrapper mb-0 flex flex-col h-full">
+                        <div class="prompt-header"><div class="prompt-title">Melhorando Animações</div><button class="copy-btn" onclick="copyPrompt(this, 'prompt3')">Copiar</button></div>
+                        <div class="prompt-box text-sm flex-1" id="prompt3">A apresentação está funcionando, mas a troca de slides está muito seca. 
+
+Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os elementos do slide devem vir de baixo para cima ("slide up") sempre que eu avançar.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 7: Netlify Drag and Drop -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-7xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold shadow-lg">3</div>
+                    <h2 class="text-4xl font-bold text-slate-800">Publicação Automática (Netlify)</h2>
+                </div>
+                
+                <button onclick="resetDragDrop()" class="absolute top-24 right-8 w-10 h-10 bg-white text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-full shadow border border-slate-200 flex items-center justify-center transition z-50" title="Reiniciar Animação">
+                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                </button>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch stagger-2 pb-8 h-full">
+                    <div class="bg-slate-200/80 p-6 rounded-3xl border border-slate-300 flex flex-col shadow-inner h-full min-h-[300px]">
+                        <h4 class="text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider"><i class="fa-solid fa-desktop"></i> Sua Área de Trabalho</h4>
+                        <p class="text-slate-600 text-sm mb-6">Arraste o arquivo <strong>index.html</strong> abaixo para a área pontilhada ao lado.</p>
+                        <div class="flex-1 flex items-center justify-center relative">
+                            <div id="draggable-file" draggable="true" class="w-28 h-32 bg-white rounded-xl shadow-md border border-slate-200 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing hover:-translate-y-1 transition-transform group z-20">
+                                <i class="fa-brands fa-html5 text-orange-500 text-5xl mb-2 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-sm font-mono text-slate-700 font-bold bg-slate-100 px-2 py-1 rounded truncate w-11/12 text-center">index.html</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-4 h-full">
+                        <div id="dropzone" class="relative bg-white p-8 rounded-3xl shadow-xl border-2 border-dashed border-slate-300 flex-1 flex flex-col items-center justify-center text-center transition-colors duration-300">
+                            <div class="absolute inset-0 bg-blue-500/5 rounded-3xl opacity-0 transition-opacity" id="drop-bg-fx"></div>
+                            <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 transition-colors pointer-events-none" id="drop-icon-container">
+                                <i id="drop-icon" class="fa-solid fa-cloud-arrow-up text-5xl text-slate-400 transition-colors"></i>
+                            </div>
+                            <h4 id="drop-title" class="text-3xl font-bold text-slate-700 mb-2 pointer-events-none">Drag and drop</h4>
+                            <p id="drop-desc" class="text-slate-500 pointer-events-none">solte o arquivo aqui para publicar</p>
+                        </div>
+                        <button id="btnUploadAnim" disabled onclick="simulateUpload()" class="shrink-0 px-6 py-5 bg-blue-600 text-white rounded-2xl transition-all font-bold text-lg shadow-lg flex items-center justify-center w-full gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:bg-slate-400 hover:bg-blue-700 hover:-translate-y-1">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl"></i> Fazer Upload do Arquivo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 8: GitHub Commit Interativo -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-7xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center gap-4 mb-4 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-brands fa-github"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">Alternativa: Usando o GitHub</h2>
+                </div>
+                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">Em projetos reais, salvamos o código no GitHub. <strong>Copie o código abaixo e cole no painel ao lado.</strong></p>
+                
+                <button onclick="resetGithub()" class="absolute top-24 right-8 w-10 h-10 bg-white text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-full shadow border border-slate-200 flex items-center justify-center transition z-50" title="Reiniciar Tela">
+                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                </button>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 stagger-2 h-full pb-8">
+                    <!-- Left: Code Source -->
+                    <div class="prompt-wrapper mb-0 flex flex-col h-full rounded-2xl overflow-hidden shadow-xl border border-slate-300">
+                        <div class="prompt-header relative z-10"><div class="prompt-title">Código Gerado</div><button class="copy-btn" onclick="copyPrompt(this, 'git-source-code')"><i class="fa-regular fa-copy"></i> Copiar</button></div>
+                        <div class="prompt-box text-sm flex-1 pt-12 rounded-none border-none shadow-none" id="git-source-code">&lt;!DOCTYPE html&gt;
+&lt;html lang="pt-BR"&gt;
+&lt;head&gt;
+    &lt;title&gt;Apresentação FAEP&lt;/title&gt;
+    &lt;style&gt; body { background: #00703c; color: white; } &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Bem-vindo!&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;</div>
+                    </div>
+                    
+                    <!-- Right: GitHub UI -->
+                    <div class="flex flex-col bg-[#f6f8fa] border border-[#d0d7de] rounded-2xl shadow-xl overflow-hidden relative">
+                        <div id="git-success-overlay" class="absolute inset-0 bg-white z-20 hidden flex-col items-center justify-center text-center p-8 animate-[scaleIn_0.4s_ease-out]">
+                            <i class="fa-solid fa-circle-check text-6xl text-emerald-500 mb-4"></i>
+                            <h3 class="text-2xl font-bold text-slate-800 mb-2">Commit Realizado!</h3>
+                            <p class="text-slate-600">Seu código foi salvo com segurança no repositório.</p>
+                        </div>
+                        
+                        <div class="bg-[#f6f8fa] px-4 py-3 border-b border-[#d0d7de] flex items-center gap-2 text-sm text-[#0969da] font-semibold">
+                            <i class="fa-brands fa-github text-slate-800 text-xl mr-2"></i> faep-inovacao / apresentacao-web
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col gap-4">
+                            <div class="flex bg-white border border-[#d0d7de] rounded-md overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500">
+                                <span class="bg-[#f6f8fa] px-3 py-2 border-r border-[#d0d7de] text-[#57606a] text-sm font-mono">apresentacao-web /</span>
+                                <input type="text" id="gh-input-name" placeholder="Name your file..." class="flex-1 px-3 py-2 text-sm font-mono outline-none text-slate-800" value="">
+                            </div>
+                            <div class="flex-1 border border-[#d0d7de] rounded-md overflow-hidden flex shadow-sm focus-within:ring-2 focus-within:ring-blue-500 bg-white">
+                                <div class="bg-[#f6f8fa] w-10 border-r border-[#d0d7de] flex flex-col items-end py-2 pr-2 text-xs text-[#6e7781] font-mono select-none">
+                                    1<br>2<br>3<br>4
+                                </div>
+                                <textarea id="gh-input-code" placeholder="Paste your code here..." class="flex-1 p-2 font-mono text-sm outline-none resize-none text-slate-800"></textarea>
+                            </div>
+                        </div>
+                        <div class="bg-[#f6f8fa] px-4 py-3 border-t border-[#d0d7de] flex justify-end">
+                            <button id="btnGitCommit" onclick="simulateGitCommit()" class="bg-[#2da44e] hover:bg-[#2c974b] text-white px-4 py-2 rounded-md font-semibold text-sm transition-colors flex items-center gap-2 shadow-sm">
+                                Commit changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 9: Configurando Netlify via GitHub (INTERATIVO COM CLIQUE) -->
+        <section class="slide" id="slide-netlify-git">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-6xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center gap-4 mb-4 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-teal-600 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-plug"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">Conectando ao Netlify</h2>
+                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse ml-2 hidden md:inline-block"><i class="fa-solid fa-mouse-pointer mr-1"></i> Clique na interface abaixo para simular</span>
+                </div>
+                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">Basta autorizar o Netlify a ler seu repositório no GitHub. É um processo de cliques.</p>
+                
+                <button onclick="resetNetlifyFlow()" class="absolute top-24 right-8 w-10 h-10 bg-white text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-full shadow border border-slate-200 flex items-center justify-center transition z-50" title="Reiniciar Interface">
+                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                </button>
+
+                <div class="stagger-2 bg-slate-100 rounded-xl border border-slate-300 shadow-2xl flex-1 relative overflow-hidden flex flex-col">
+                    <div class="h-10 bg-slate-200 border-b border-slate-300 flex items-center px-4 gap-2 shrink-0">
+                        <div class="w-3 h-3 rounded-full bg-red-400"></div><div class="w-3 h-3 rounded-full bg-yellow-400"></div><div class="w-3 h-3 rounded-full bg-green-400"></div>
+                        <div class="ml-4 bg-white px-3 py-1 rounded text-xs text-slate-500 font-mono shadow-sm"><i class="fa-solid fa-lock text-slate-400 mr-1"></i> app.netlify.com</div>
+                    </div>
+                    
+                    <div class="relative flex-1 bg-white p-8 overflow-hidden">
+                        
+                        <!-- Step 0: Add New Site -->
+                        <div id="vis-net-0" class="absolute inset-0 p-8 transition-opacity duration-300 z-10">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-6">Sites</h3>
+                            <div class="relative inline-block group">
+                                <button class="bg-teal-600 text-white px-6 py-3 rounded-lg font-bold shadow-md cursor-pointer"><i class="fa-solid fa-plus mr-2"></i> Add new site</button>
+                                <div class="absolute top-14 left-0 bg-white border border-slate-200 rounded-lg shadow-xl w-64 text-left flex-col overflow-hidden hidden group-hover:flex z-50">
+                                    <div onclick="setNetlifyStep(1)" class="px-4 py-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"><strong class="block text-slate-700">Import an existing project</strong><span class="text-xs text-slate-500">From a Git repository</span></div>
+                                    <div class="px-4 py-3 hover:bg-slate-50 cursor-not-allowed opacity-50"><strong class="block text-slate-700">Deploy manually</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 1: Select Git Provider -->
+                        <div id="vis-net-1" class="absolute inset-0 p-8 bg-white transition-opacity duration-300 opacity-0 pointer-events-none z-20">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-2">Let's deploy your project</h3>
+                            <p class="text-slate-500 mb-8">Connect to a Git provider to import an existing project.</p>
+                            <div class="grid grid-cols-3 gap-4 max-w-2xl">
+                                <div onclick="setNetlifyStep(2)" class="border-2 border-slate-800 rounded-xl p-4 flex items-center justify-center gap-3 cursor-pointer bg-slate-50 hover:bg-slate-100 transition"><i class="fa-brands fa-github text-2xl"></i> <span class="font-bold text-slate-800">GitHub</span></div>
+                                <div class="border border-slate-200 rounded-xl p-4 flex items-center justify-center gap-3 opacity-50 cursor-not-allowed"><i class="fa-brands fa-gitlab text-2xl text-orange-500"></i> <span class="font-bold text-slate-600">GitLab</span></div>
+                                <div class="border border-slate-200 rounded-xl p-4 flex items-center justify-center gap-3 opacity-50 cursor-not-allowed"><i class="fa-brands fa-bitbucket text-2xl text-blue-500"></i> <span class="font-bold text-slate-600">Bitbucket</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Pick Repo -->
+                        <div id="vis-net-2" class="absolute inset-0 p-8 bg-white transition-opacity duration-300 opacity-0 pointer-events-none z-30">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-6">Pick a repository from GitHub</h3>
+                            <div class="border border-slate-200 rounded-xl max-w-2xl overflow-hidden shadow-sm">
+                                <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-slate-400"></i> <input type="text" placeholder="Search repos..." class="bg-transparent outline-none text-sm w-full" readonly></div>
+                                <div class="px-4 py-4 border-b border-slate-100 hover:bg-teal-50 flex items-center justify-between opacity-50"><div class="flex items-center gap-3"><i class="fa-brands fa-github text-slate-400"></i> <span class="font-bold text-slate-700">faep-inovacao / intranet-app</span></div></div>
+                                <div onclick="setNetlifyStep(3)" class="px-4 py-4 bg-teal-50 hover:bg-teal-100 border-l-4 border-teal-500 cursor-pointer flex items-center justify-between transition"><div class="flex items-center gap-3"><i class="fa-brands fa-github text-slate-800"></i> <span class="font-bold text-teal-800">faep-inovacao / apresentacao-web</span></div><i class="fa-solid fa-arrow-right text-teal-600"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Deploy -->
+                        <div id="vis-net-3" class="absolute inset-0 p-8 bg-white transition-opacity duration-300 opacity-0 pointer-events-none z-40">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-6">Site settings and deploy!</h3>
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 max-w-2xl mb-6">
+                                <div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Branch to deploy</label><div class="bg-white border border-slate-300 px-3 py-2 rounded text-sm text-slate-800 font-mono">main</div></div>
+                                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Build command</label><div class="bg-white border border-slate-300 px-3 py-2 rounded text-sm text-slate-400 italic">No build command</div></div>
+                            </div>
+                            <button id="btnMockDeploy" class="bg-teal-600 text-white px-8 py-3 rounded-lg font-bold shadow-md hover:bg-teal-700 transition-colors w-64" onclick="simulateNetlifyDeploy()">Deploy</button>
+                            
+                            <div id="net-success-container" class="mt-6 w-full max-w-2xl"></div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 10: CI/CD -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center gap-4 mb-4 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-teal-500 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-bolt"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">A Mágica da Integração (CI/CD)</h2>
+                </div>
+                <p class="stagger-1 text-xl text-slate-600 mb-10 shrink-0">Com o repositório conectado, toda vez que você fizer um <strong>novo Commit no GitHub</strong>, o Netlify atualiza o site no ar automaticamente.</p>
+                
+                <button onclick="resetCICD()" class="absolute top-24 right-8 w-10 h-10 bg-white text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-full shadow border border-slate-200 flex items-center justify-center transition z-50" title="Reiniciar Animação">
+                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                </button>
+
+                <div class="stagger-2 flex flex-col items-center justify-center flex-1">
+                    <div class="flex w-full max-w-3xl items-center justify-between mt-4">
+                        <div class="w-36 h-36 bg-slate-900 text-white rounded-2xl flex flex-col items-center justify-center shadow-xl border-4 border-slate-700 z-10">
+                            <i class="fa-brands fa-github text-5xl mb-2"></i><span class="text-sm font-bold">GitHub (Código)</span>
+                        </div>
+                        <div class="flex-1 h-3 bg-slate-200 relative -mx-4 z-0 overflow-hidden rounded shadow-inner">
+                            <div id="deploy-pulse" class="absolute top-0 left-0 h-full bg-blue-500 rounded hidden"></div>
+                        </div>
+                        <div class="w-36 h-36 bg-white text-teal-600 rounded-2xl flex flex-col items-center justify-center shadow-xl border-4 border-teal-100 z-10">
+                            <i class="fa-solid fa-server text-5xl mb-2 text-teal-500"></i><span class="text-sm font-bold">Netlify (Servidor)</span>
+                        </div>
+                    </div>
+                    <div class="text-center mt-12 w-full">
+                        <button onclick="triggerDeploy()" id="btnDeploy" class="px-8 py-4 bg-teal-600 text-white rounded-full font-bold shadow-lg hover:bg-teal-700 flex items-center justify-center gap-3 mx-auto transition-transform hover:scale-105">
+                             <i class="fa-solid fa-rotate"></i> Simular Nova Atualização no Código
+                        </button>
+                        <div class="mt-6 h-8 flex items-center justify-center">
+                            <p id="deployStatus" class="text-slate-600 font-mono text-sm font-semibold bg-slate-100 px-4 py-2 rounded-lg hidden"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 11: Erro Page Not Found -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">Erro: "Page Not Found"</h2>
+                </div>
+                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">O erro clássico nº 1. A página simplesmente não abre ao clicar no link.</p>
+                <div class="stagger-2 prompt-wrapper shrink-0">
+                    <div class="prompt-header"><div class="prompt-title">Diagnosticando o Erro</div><button class="copy-btn" onclick="copyPrompt(this, 'prompt4')">Copiar</button></div>
+                    <div class="prompt-box text-sm" id="prompt4">Fiz o upload no Netlify, mas recebo o erro "Page Not Found". O único arquivo que enviei chama-se "Apresentacao_Final.html".</div>
+                </div>
+                <div class="stagger-3 mt-4 text-center shrink-0 w-full relative">
+                    <button id="btnIA-1" onclick="simulateAIResponse('btnIA-1', 'aiBlock-1')" class="px-8 py-4 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition font-bold shadow-xl flex items-center justify-center gap-3 mx-auto w-full md:w-auto hover:scale-105"><i class="fa-solid fa-robot text-xl"></i> Mostrar Resposta da IA</button>
+                    <div id="aiBlock-1" class="hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-xl relative text-left animate-[fadeInDown_0.4s_ease-out]">
+                        <div class="absolute left-0 top-0 w-1.5 h-full bg-green-500 rounded-l-2xl"></div>
+                        <div class="flex gap-4 items-start">
+                            <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-green-700 shrink-0 text-xl"><i class="fa-solid fa-robot"></i></div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-lg mb-2">Resposta:</h4>
+                                <p class="text-slate-600 leading-relaxed">Servidores web procuram por padrão um arquivo chamado <strong>index.html</strong> (tudo minúsculo).<br><strong>Solução:</strong> Renomeie <span class="line-through text-red-400">"Apresentacao_Final.html"</span> para <strong class="text-green-700 bg-green-50 px-2 py-0.5 rounded">index.html</strong> e envie novamente.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 12: Erro Imagens Quebradas -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-regular fa-image"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">Erro: "Imagens Quebradas"</h2>
+                </div>
+                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">A apresentação abre, mas as fotos viram ícones quebrados ou não carregam na internet.</p>
+                <div class="stagger-2 prompt-wrapper shrink-0">
+                    <div class="prompt-header"><div class="prompt-title">Diagnosticando o Erro</div><button class="copy-btn" onclick="copyPrompt(this, 'prompt5')">Copiar</button></div>
+                    <div class="prompt-box text-sm" id="prompt5">Minha apresentação está online no Netlify, mas a foto que eu coloquei aparece quebrada. O caminho no código está: src="C:/Users/Documentos/foto.png".</div>
+                </div>
+                <div class="stagger-3 mt-4 text-center shrink-0 w-full relative">
+                    <button id="btnIA-2" onclick="simulateAIResponse('btnIA-2', 'aiBlock-2')" class="px-8 py-4 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition font-bold shadow-xl flex items-center justify-center gap-3 mx-auto w-full md:w-auto hover:scale-105"><i class="fa-solid fa-robot text-xl"></i> Mostrar Resposta da IA</button>
+                    <div id="aiBlock-2" class="hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-xl relative text-left animate-[fadeInDown_0.4s_ease-out]">
+                        <div class="absolute left-0 top-0 w-1.5 h-full bg-green-500 rounded-l-2xl"></div>
+                        <div class="flex gap-4 items-start">
+                            <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-green-700 shrink-0 text-xl"><i class="fa-solid fa-robot"></i></div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-lg mb-2">Resposta:</h4>
+                                <p class="text-slate-600 leading-relaxed">O Netlify não tem acesso ao disco `C:/` do seu computador. Para imagens funcionarem na web, use <strong>links online</strong> (URLs como https://site.com/foto.jpg).<br><br>Se quiser usar um arquivo local, salve a imagem na mesma pasta do <code>index.html</code>, altere o código para <code>src="foto.png"</code> e faça o upload da pasta <strong>inteira</strong> no Netlify.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 13: Erro Responsividade -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col pt-[15vh] max-w-5xl mx-auto px-8 pb-12 relative">
+                <div class="stagger-1 flex items-center gap-4 mb-6 shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-mobile-screen"></i></div>
+                    <h2 class="text-4xl font-bold text-slate-800">Erro: "Tudo quebrado no Celular"</h2>
+                </div>
+                <p class="stagger-1 text-xl text-slate-600 mb-6 shrink-0">A apresentação ficou linda no computador, mas ao enviar o link pelo celular, os textos vazam da tela.</p>
+                <div class="stagger-2 prompt-wrapper shrink-0">
+                    <div class="prompt-header"><div class="prompt-title">Como pedir correção</div><button class="copy-btn" onclick="copyPrompt(this, 'prompt6')">Copiar</button></div>
+                    <div class="prompt-box text-sm" id="prompt6">O código atual ficou ótimo no computador, mas no celular o texto ultrapassa a tela e cria uma barra de rolagem horizontal. Corrija o CSS para ser 100% responsivo.</div>
+                </div>
+                <div class="stagger-3 mt-4 text-center shrink-0 w-full relative">
+                    <button id="btnIA-3" onclick="simulateAIResponse('btnIA-3', 'aiBlock-3')" class="px-8 py-4 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition font-bold shadow-xl flex items-center justify-center gap-3 mx-auto w-full md:w-auto hover:scale-105"><i class="fa-solid fa-robot text-xl"></i> Mostrar Resposta da IA</button>
+                    <div id="aiBlock-3" class="hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-xl relative text-left animate-[fadeInDown_0.4s_ease-out]">
+                        <div class="absolute left-0 top-0 w-1.5 h-full bg-green-500 rounded-l-2xl"></div>
+                        <div class="flex gap-4 items-start">
+                            <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-green-700 shrink-0 text-xl"><i class="fa-solid fa-robot"></i></div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-lg mb-2">Resposta (Ação da IA):</h4>
+                                <p class="text-slate-600 leading-relaxed"><em>(A IA irá reescrever seu código aplicando regras de media queries CSS).</em><br><br><strong>Dica Pro:</strong> Sempre inclua a palavra <strong>"Responsivo"</strong> ou <strong>"Mobile-first"</strong> no seu Primeiro Prompt para evitar retrabalho.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 14: Fim -->
+        <section class="slide">
+            <div class="w-full h-full flex flex-col items-center justify-center text-center p-8 relative z-10">
+                <div class="stagger-1 w-24 h-24 bg-gradient-to-br from-[#00703c] to-[#10b981] rounded-full flex items-center justify-center text-white text-4xl shadow-2xl mb-8">
+                    <i class="fa-solid fa-rocket"></i>
+                </div>
+                <h2 class="stagger-2 text-5xl font-extrabold mb-6 text-slate-800">Você está pronto!</h2>
+                <p class="stagger-3 text-xl text-slate-600 mb-10 max-w-2xl">
+                    Com <strong>Instruções Claras</strong>, <strong>Formato HTML único</strong> e a <strong>Hospedagem Netlify</strong>, você tem uma esteira de produção imbatível.
+                </p>
+                <div class="stagger-3 flex gap-4">
+                    <button onclick="goToSlide(0)" class="px-8 py-3 bg-white border-2 border-slate-200 text-slate-700 hover:border-[#00703c] hover:text-[#00703c] rounded-full font-semibold transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-left"></i> Voltar ao Início
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="fixed-controls">
+        <div class="dots-container" id="dotsContainer"></div>
+    </div>
+
+    <script>
+        // --- SISTEMA DE AUDIO ---
+        let isAudioPlaying = false;
+        let toneSynth = null;
+        let toneSequence = null;
+
+        function initTone() {
+            if (toneSynth) return;
+            // Cria um synth relaxante/corporativo
+            toneSynth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.5, decay: 0.5, sustain: 0.5, release: 2 }
+            }).toDestination();
+            toneSynth.volume.value = -12; // Volume agradável
+
+            // Sequencia de notas calmas (Acordes simples Cmaj7, Am7, Fmaj7, G7)
+            const chords = [
+                ["C4", "E4", "G4", "B4"],
+                ["A3", "C4", "E4", "G4"],
+                ["F3", "A3", "C4", "E4"],
+                ["G3", "B3", "D4", "F4"]
+            ];
+            let step = 0;
+            toneSequence = new Tone.Loop(time => {
+                toneSynth.triggerAttackRelease(chords[step % chords.length], "2n", time);
+                step++;
+            }, "1m");
+            Tone.Transport.bpm.value = 80;
+        }
+
+        async function toggleAudio() {
+            const icon = document.getElementById('audio-icon');
+            const container = document.querySelector('.soundbars');
+            
+            if (!isAudioPlaying) {
+                await Tone.start(); // Requer interação do usuário
+                initTone();
+                Tone.Transport.start();
+                toneSequence.start(0);
+                
+                icon.classList.replace('fa-volume-xmark', 'fa-volume-high');
+                icon.classList.replace('text-slate-400', 'text-green-600');
+                container.classList.add('playing');
+                isAudioPlaying = true;
+            } else {
+                Tone.Transport.stop();
+                if(toneSequence) toneSequence.stop();
+                
+                icon.classList.replace('fa-volume-high', 'fa-volume-xmark');
+                icon.classList.replace('text-green-600', 'text-slate-400');
+                container.classList.remove('playing');
+                isAudioPlaying = false;
+            }
+        }
+
+        // --- SISTEMA DE NAVEGAÇÃO DE SLIDES ---
+        let currentSlide = 0;
+        let currentFragment = 0;
+        
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const dotsContainer = document.getElementById('dotsContainer');
+        const progressBar = document.getElementById('progressBar');
+
+        for (let i = 0; i < totalSlides; i++) {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            dot.onclick = () => goToSlide(i);
+            dotsContainer.appendChild(dot);
+        }
+        const dots = document.querySelectorAll('.dot');
+
+        function updateUI() {
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active'); slide.classList.remove('past');
+                } else if (index < currentSlide) {
+                    slide.classList.remove('active'); slide.classList.add('past');
+                } else {
+                    slide.classList.remove('active'); slide.classList.remove('past');
+                }
+            });
+            dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentSlide); });
+            progressBar.style.width = `${(currentSlide / (totalSlides - 1)) * 100}%`;
+        }
+
+        function nextAction() {
+            const activeSlide = slides[currentSlide];
+            const maxFragments = parseInt(activeSlide.getAttribute('data-fragments') || "0");
+            if (currentFragment < maxFragments) {
+                currentFragment++; processVisualFragments(activeSlide, currentFragment);
+            } else if (currentSlide < totalSlides - 1) {
+                currentSlide++; currentFragment = 0;
+                updateUI(); processVisualFragments(slides[currentSlide], currentFragment);
+            }
+        }
+
+        function prevAction() {
+            const activeSlide = slides[currentSlide];
+            if (currentFragment > 0) {
+                currentFragment--; processVisualFragments(activeSlide, currentFragment);
+            } else if (currentSlide > 0) {
+                currentSlide--;
+                const prevSlideEl = slides[currentSlide];
+                currentFragment = parseInt(prevSlideEl.getAttribute('data-fragments') || "0");
+                updateUI(); processVisualFragments(prevSlideEl, currentFragment);
+            }
+        }
+
+        function goToSlide(index) {
+            if (index >= 0 && index < totalSlides && index !== currentSlide) {
+                currentSlide = index; currentFragment = 0;
+                updateUI(); processVisualFragments(slides[currentSlide], 0);
+            }
+        }
+
+        let typeWriterInterval = null;
+
+        function processVisualFragments(slide, fragIdx) {
+            // Fragmentos Vantagens
+            if (slide.id === 'slide-vantagens') {
+                const vants = [document.getElementById('vant-1'), document.getElementById('vant-2'), document.getElementById('vant-3')];
+                const dev = document.getElementById('mock-device'); const cols = document.getElementById('mock-columns');
+                vants.forEach((vant, idx) => {
+                    const iconBox = vant.querySelector('div');
+                    if (idx + 1 === fragIdx || idx + 1 < fragIdx) {
+                        vant.classList.remove('opacity-40'); vant.classList.add('ring-2', 'ring-[#00703c]', 'scale-[1.02]', 'z-10', 'bg-green-50');
+                        iconBox.classList.replace('bg-slate-100', 'bg-[#00703c]'); iconBox.classList.replace('text-slate-600', 'text-white');
+                        if(idx + 1 < fragIdx) vant.classList.remove('scale-[1.02]');
+                    } else {
+                        vant.classList.add('opacity-40'); vant.classList.remove('ring-2', 'ring-[#00703c]', 'scale-[1.02]', 'z-10', 'bg-green-50');
+                        iconBox.classList.replace('bg-[#00703c]', 'bg-slate-100'); iconBox.classList.replace('text-white', 'text-slate-600');
+                    }
+                });
+                const vis0 = document.getElementById('vis-vant-0'); const vis1 = document.getElementById('vis-vant-1');
+                const vis2 = document.getElementById('vis-vant-2'); const vis3 = document.getElementById('vis-vant-3');
+                if(typeWriterInterval) clearInterval(typeWriterInterval);
+                if (fragIdx === 0) {
+                    vis0.style.opacity = 1; vis1.style.opacity = 0; vis2.style.opacity = 0; vis3.style.opacity = 0;
+                    if(dev) dev.classList.remove('anim-device'); if(cols) cols.style.flexWrap = 'nowrap';
+                } else if (fragIdx === 1) {
+                    vis0.style.opacity = 0; vis1.style.opacity = 1; vis2.style.opacity = 0; vis3.style.opacity = 0;
+                    if(dev) dev.classList.add('anim-device'); if(cols) cols.style.flexWrap = 'wrap';
+                } else if (fragIdx === 2) {
+                    vis0.style.opacity = 0; vis1.style.opacity = 0; vis2.style.opacity = 1; vis3.style.opacity = 0;
+                    if(dev) dev.classList.remove('anim-device');
+                    setTimeout(() => { const msg = document.getElementById('msg-link'); if (msg) msg.classList.remove('translate-y-6', 'opacity-0'); }, 400);
+                } else if (fragIdx === 3) {
+                    vis0.style.opacity = 0; vis1.style.opacity = 0; vis2.style.opacity = 0; vis3.style.opacity = 1;
+                    const tCode = document.getElementById('typing-code'); tCode.innerHTML = '';
+                    const codeStr = `<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n  <meta charset="UTF-8">\n  <title>FAEP Sustentável</title>\n  <style>\n    body {\n      background: #00703c;\n      color: white;\n    }\n  </style>\n</head>\n<body>\n  <header>Inovação</header>\n</body>\n</html>`;
+                    let i = 0; tCode.style.animation = 'blink 0.8s step-end infinite';
+                    typeWriterInterval = setInterval(() => {
+                        if (vis3.style.opacity == 1 && i < codeStr.length) { tCode.innerHTML += codeStr.charAt(i).replace('<', '&lt;').replace('>', '&gt;'); i++; } else clearInterval(typeWriterInterval);
+                    }, 25);
+                }
+            }
+
+            // Fragmentos Copiando
+            if (slide.id === 'slide-copiando') {
+                const steps = [document.getElementById('step-A'), document.getElementById('step-B'), document.getElementById('step-C')];
+                steps.forEach((step, idx) => {
+                    const numberBox = step.querySelector('div');
+                    if (idx + 1 === fragIdx || idx + 1 < fragIdx) {
+                        step.classList.remove('opacity-40'); step.classList.add('ring-2', 'ring-[#00703c]', 'scale-[1.02]', 'z-10', 'bg-green-50');
+                        numberBox.classList.add('bg-[#00703c]', 'text-white'); numberBox.classList.remove('bg-slate-100', 'text-slate-600');
+                        if(idx + 1 < fragIdx) step.classList.remove('scale-[1.02]');
+                    } else {
+                        step.classList.add('opacity-40'); step.classList.remove('ring-2', 'ring-[#00703c]', 'scale-[1.02]', 'z-10', 'bg-green-50');
+                        numberBox.classList.remove('bg-[#00703c]', 'text-white'); numberBox.classList.add('bg-slate-100', 'text-slate-600');
+                    }
+                });
+                const visA = document.getElementById('vis-step-A'); const visB = document.getElementById('vis-step-B');
+                const visC = document.getElementById('vis-step-C'); const copyBtn = document.getElementById('mockup-copy-btn');
+                const modalBox = document.getElementById('save-modal-box');
+                if (fragIdx === 0) {
+                    visA.style.opacity = 1; visB.style.opacity = 0; visC.style.opacity = 0; copyBtn.classList.remove('ring-4', 'ring-green-400', 'bg-green-600', 'scale-110');
+                } else if (fragIdx === 1) {
+                    visA.style.opacity = 1; visB.style.opacity = 0; visC.style.opacity = 0; copyBtn.classList.add('ring-4', 'ring-green-400', 'bg-green-600', 'scale-110');
+                } else if (fragIdx === 2) {
+                    visA.style.opacity = 0; visB.style.opacity = 1; visC.style.opacity = 0; visB.classList.remove('pointer-events-none');
+                } else if (fragIdx === 3) {
+                    visA.style.opacity = 0; visB.style.opacity = 1; visC.style.opacity = 1; modalBox.classList.replace('scale-95', 'scale-100');
+                }
+            }
+        }
+
+        function copyPrompt(btnElement, elementId) {
+            const textToCopy = document.getElementById(elementId).innerText.trim();
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                const originalHtml = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Copiado!';
+                btnElement.style.background = 'rgba(16, 185, 129, 0.2)'; btnElement.style.color = '#10b981'; 
+                setTimeout(() => { btnElement.innerHTML = originalHtml; btnElement.style.background = ''; btnElement.style.color = ''; }, 2000);
+            } catch (err) {
+                console.error('Falha ao copiar texto', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        function revelarDica() { document.getElementById('btnDica').style.display = 'none'; document.getElementById('dicaOuro').classList.remove('hidden'); }
+        
+        function toggleCanvas() {
+            const codeView = document.getElementById('canvas-code-view'); const previewView = document.getElementById('canvas-preview-view'); const btn = document.getElementById('btnCanvasToggle');
+            if (previewView.classList.contains('hidden')) {
+                previewView.classList.remove('hidden'); previewView.classList.add('flex'); codeView.classList.add('hidden');
+                btn.innerHTML = '<i class="fa-solid fa-code"></i> Voltar para Código'; btn.classList.replace('bg-[#00703c]', 'bg-slate-700'); btn.classList.replace('hover:bg-green-700', 'hover:bg-slate-800');
+            } else {
+                previewView.classList.add('hidden'); previewView.classList.remove('flex'); codeView.classList.remove('hidden');
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> Alternar para Preview'; btn.classList.replace('bg-slate-700', 'bg-[#00703c]'); btn.classList.replace('hover:bg-slate-800', 'hover:bg-green-700');
+            }
+        }
+
+        // --- SISTEMA DRAG AND DROP (NETLIFY) ---
+        const draggableFile = document.getElementById('draggable-file'); const dropzone = document.getElementById('dropzone'); const btnUpload = document.getElementById('btnUploadAnim');
+        let isFileDropped = false;
+        
+        draggableFile.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', 'index.html'); setTimeout(() => { draggableFile.style.opacity = '0.4'; }, 0); });
+        draggableFile.addEventListener('dragend', () => { draggableFile.style.opacity = '1'; if (isFileDropped) draggableFile.style.display = 'none'; });
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-blue-500', 'bg-blue-50'); document.getElementById('drop-bg-fx').style.opacity = '1'; });
+        dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('border-blue-500', 'bg-blue-50'); document.getElementById('drop-bg-fx').style.opacity = '0'; });
+        
+        function completeDrop() {
+            isFileDropped = true; draggableFile.style.display = 'none';
+            dropzone.classList.remove('border-blue-500', 'bg-blue-50'); dropzone.classList.add('border-green-400', 'bg-green-50'); document.getElementById('drop-bg-fx').style.opacity = '0';
+            document.getElementById('drop-icon').classList.replace('fa-cloud-arrow-up', 'fa-file-code'); document.getElementById('drop-icon').classList.replace('text-slate-400', 'text-green-500');
+            document.getElementById('drop-title').innerText = "Arquivo Recebido!"; document.getElementById('drop-title').classList.replace('text-slate-700', 'text-green-700');
+            document.getElementById('drop-desc').innerText = "Pronto para deploy.";
+            btnUpload.disabled = false; btnUpload.classList.remove('bg-slate-400'); btnUpload.classList.add('animate-pulse'); setTimeout(() => btnUpload.classList.remove('animate-pulse'), 1000);
+        }
+        dropzone.addEventListener('drop', (e) => { e.preventDefault(); completeDrop(); });
+        draggableFile.addEventListener('click', () => { completeDrop(); });
+
+        function simulateUpload() {
+            btnUpload.disabled = true; btnUpload.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-xl"></i> Processando...';
+            dropzone.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-5xl text-blue-500 mb-4"></i><h4 class="text-3xl font-bold text-slate-700">Fazendo Deploy...</h4><p class="text-slate-500 mt-2">Enviando index.html para a web</p>`;
+            dropzone.classList.remove('border-green-400', 'bg-green-50'); dropzone.classList.add('border-blue-400', 'bg-blue-50/50');
+            setTimeout(() => {
+                dropzone.innerHTML = `<div class="animate-[scaleIn_0.5s_ease-out] flex flex-col items-center"><i class="fa-solid fa-circle-check text-6xl text-green-500 mb-4 shadow-sm rounded-full bg-white"></i><h4 class="text-3xl font-bold text-green-700 mb-3">Deploy Concluído!</h4><p class="text-slate-500 mb-4">Sua apresentação está online:</p><a href="#" class="text-blue-600 font-bold bg-white px-5 py-3 rounded-xl shadow border border-blue-100 hover:bg-blue-50 transition hover:-translate-y-1"><i class="fa-solid fa-link"></i> faep-inovacao.netlify.app</a></div>`;
+                dropzone.classList.remove('border-blue-400', 'bg-blue-50/50'); dropzone.classList.add('border-green-400', 'bg-green-50');
+                btnUpload.innerHTML = '<i class="fa-solid fa-check text-xl"></i> Publicado com Sucesso'; btnUpload.classList.replace('bg-blue-600', 'bg-green-600'); btnUpload.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
+            }, 2500);
+        }
+
+        function resetDragDrop() {
+            isFileDropped = false;
+            draggableFile.style.display = 'flex';
+            
+            dropzone.innerHTML = `
+                <div class="absolute inset-0 bg-blue-500/5 rounded-3xl opacity-0 transition-opacity" id="drop-bg-fx"></div>
+                <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 transition-colors pointer-events-none" id="drop-icon-container">
+                    <i id="drop-icon" class="fa-solid fa-cloud-arrow-up text-5xl text-slate-400 transition-colors"></i>
+                </div>
+                <h4 id="drop-title" class="text-3xl font-bold text-slate-700 mb-2 pointer-events-none">Drag and drop</h4>
+                <p id="drop-desc" class="text-slate-500 pointer-events-none">solte o arquivo aqui para publicar</p>
+            `;
+            dropzone.className = "relative bg-white p-8 rounded-3xl shadow-xl border-2 border-dashed border-slate-300 flex-1 flex flex-col items-center justify-center text-center transition-colors duration-300";
+            
+            btnUpload.disabled = true;
+            btnUpload.className = "shrink-0 px-6 py-5 bg-blue-600 text-white rounded-2xl transition-all font-bold text-lg shadow-lg flex items-center justify-center w-full gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:bg-slate-400 hover:bg-blue-700 hover:-translate-y-1";
+            btnUpload.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-2xl"></i> Fazer Upload do Arquivo';
+        }
+        
+        // --- SISTEMA GITHUB COMMIT ---
+        function simulateGitCommit() {
+            const btn = document.getElementById('btnGitCommit');
+            const nameInput = document.getElementById('gh-input-name').value.trim().toLowerCase();
+            const codeInput = document.getElementById('gh-input-code').value.trim();
+            const overlay = document.getElementById('git-success-overlay');
+
+            if (nameInput !== 'index.html') {
+                const oldText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> O nome deve ser index.html';
+                btn.classList.replace('bg-[#2da44e]', 'bg-red-500'); btn.classList.replace('hover:bg-[#2c974b]', 'hover:bg-red-600');
+                setTimeout(() => { btn.innerHTML = oldText; btn.classList.replace('bg-red-500', 'bg-[#2da44e]'); btn.classList.replace('hover:bg-red-600', 'hover:bg-[#2c974b]'); }, 2500);
+                return;
+            }
+            if (codeInput === '') {
+                const oldText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Cole o código primeiro!';
+                btn.classList.replace('bg-[#2da44e]', 'bg-amber-500'); btn.classList.replace('hover:bg-[#2c974b]', 'hover:bg-amber-600');
+                setTimeout(() => { btn.innerHTML = oldText; btn.classList.replace('bg-amber-500', 'bg-[#2da44e]'); btn.classList.replace('hover:bg-amber-600', 'hover:bg-[#2c974b]'); }, 2500);
+                return;
+            }
+
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+            setTimeout(() => { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }, 1000);
+        }
+
+        function resetGithub() {
+            document.getElementById('gh-input-name').value = '';
+            document.getElementById('gh-input-code').value = '';
+            const overlay = document.getElementById('git-success-overlay');
+            overlay.classList.add('hidden'); overlay.classList.remove('flex');
+            const btn = document.getElementById('btnGitCommit');
+            btn.innerHTML = 'Commit changes';
+        }
+
+        // --- SISTEMA NETLIFY VIA GITHUB (CLIQUE) ---
+        function setNetlifyStep(step) {
+            const vis = [document.getElementById('vis-net-0'), document.getElementById('vis-net-1'), document.getElementById('vis-net-2'), document.getElementById('vis-net-3')];
+            vis.forEach((v, i) => {
+                if (i === step) {
+                    v.style.opacity = 1; v.classList.remove('pointer-events-none');
+                } else {
+                    v.style.opacity = 0; v.classList.add('pointer-events-none');
+                }
+            });
+        }
+
+        function simulateNetlifyDeploy() {
+            const btn = document.getElementById('btnMockDeploy');
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Deploying...';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Site is live!';
+                btn.classList.replace('bg-teal-600', 'bg-emerald-500'); 
+                btn.classList.replace('hover:bg-teal-700', 'hover:bg-emerald-600');
+                document.getElementById('net-success-container').innerHTML = `<a href="#" class="block text-center text-blue-600 font-bold bg-blue-50 px-5 py-3 rounded-xl shadow border border-blue-100 hover:bg-blue-100 transition"><i class="fa-solid fa-link"></i> faep-inovacao.netlify.app</a>`;
+            }, 1500);
+        }
+
+        function resetNetlifyFlow() {
+            setNetlifyStep(0);
+            const btn = document.getElementById('btnMockDeploy');
+            btn.innerHTML = 'Deploy';
+            btn.classList.replace('bg-emerald-500', 'bg-teal-600');
+            btn.classList.replace('hover:bg-emerald-600', 'hover:bg-teal-700');
+            btn.disabled = false;
+            document.getElementById('net-success-container').innerHTML = '';
+        }
+        
+        // --- SISTEMA CI/CD ---
+        function triggerDeploy() {
+            const pulse = document.getElementById('deploy-pulse'); const status = document.getElementById('deployStatus'); const btn = document.getElementById('btnDeploy');
+            btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
+            status.classList.remove('hidden'); status.innerText = "> Novo commit detectado. Iniciando pipeline...";
+            pulse.classList.remove('hidden'); pulse.style.animation = 'slideRight 2s linear forwards';
+            
+            setTimeout(() => { status.innerText = "> Netlify conectando ao repositório..."; }, 700);
+            setTimeout(() => { status.innerText = "> Renderizando HTML... Atualizando CDN..."; }, 1400);
+            setTimeout(() => {
+                status.innerText = "> Deploy bem-sucedido! O site atualizou.";
+                status.classList.replace('text-slate-600', 'text-teal-700'); status.classList.replace('bg-slate-100', 'bg-teal-50'); pulse.classList.replace('bg-blue-500', 'bg-teal-400');
+                setTimeout(() => {
+                    btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    pulse.classList.add('hidden'); pulse.classList.replace('bg-teal-400', 'bg-blue-500'); pulse.style.animation = '';
+                    status.classList.add('hidden'); status.classList.replace('text-teal-700', 'text-slate-600'); status.classList.replace('bg-teal-50', 'bg-slate-100');
+                }, 4000);
+            }, 2300);
+        }
+
+        function resetCICD() {
+            const btn = document.getElementById('btnDeploy');
+            const pulse = document.getElementById('deploy-pulse'); 
+            const status = document.getElementById('deployStatus');
+            btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            pulse.classList.add('hidden'); pulse.classList.replace('bg-teal-400', 'bg-blue-500'); pulse.style.animation = '';
+            status.classList.add('hidden'); status.classList.replace('text-teal-700', 'text-slate-600'); status.classList.replace('bg-teal-50', 'bg-slate-100');
+        }
+
+        // --- SISTEMA IA (ERROS) ---
+        function simulateAIResponse(btnId, blockId) {
+            const btn = document.getElementById(btnId); const block = document.getElementById(blockId);
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-xl"></i> Processando...';
+            btn.classList.remove('bg-slate-800', 'hover:scale-105'); btn.classList.add('bg-slate-600', 'cursor-not-allowed');
+            setTimeout(() => { btn.style.display = 'none'; block.classList.remove('hidden'); }, 1200);
+        }
+
+        // Teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextAction(); else if (e.key === 'ArrowLeft') prevAction();
+        });
+
+        updateUI();
+    </script>
+</body>
+</html>
