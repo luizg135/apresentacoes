@@ -62,8 +62,8 @@
             <p class="text-slate-500 font-medium">Buscando apresentações no repositório...</p>
         </div>
 
-        <!-- Grid onde as apresentações vão aparecer -->
-        <div id="presentations-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+        <!-- Grid onde as apresentações vão aparecer (Ajustado para cartões menores) -->
+        <div id="presentations-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 hidden">
             <!-- Os cards serão injetados aqui pelo JavaScript -->
         </div>
 
@@ -124,20 +124,12 @@
 
                     const card = document.createElement('a');
                     card.href = file.name;
-                    card.className = "group block bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden relative";
+                    // Estilo atualizado: menorzinho, fundo verde SENAR (#235937)
+                    card.className = "flex items-center justify-center bg-[#235937] hover:bg-[#1a4329] rounded-xl py-4 px-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer min-h-[80px]";
                     
+                    // Somente o nome da apresentação, centralizado e em branco
                     card.innerHTML = `
-                        <div class="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-bl-full -z-10 group-hover:scale-150 transition-transform duration-500"></div>
-                        <div class="w-12 h-12 bg-[#e6f1ec] text-[#00703c] rounded-xl flex items-center justify-center text-xl mb-6 shadow-inner group-hover:bg-[#00703c] group-hover:text-white transition-colors">
-                            <i class="fa-solid fa-desktop"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-slate-800 mb-2 capitalize group-hover:text-[#00703c] transition-colors line-clamp-2">${displayName}</h3>
-                        <div class="flex items-center text-slate-400 text-sm font-mono mt-4">
-                            <i class="fa-solid fa-file-code mr-2"></i> ${file.name}
-                        </div>
-                        <div class="mt-6 flex items-center text-[#00703c] text-sm font-bold opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
-                            Abrir Apresentação <i class="fa-solid fa-arrow-right ml-2"></i>
-                        </div>
+                        <h3 class="text-base font-bold text-white text-center capitalize line-clamp-2">${displayName}</h3>
                     `;
                     
                     grid.appendChild(card);
