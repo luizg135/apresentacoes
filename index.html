@@ -182,10 +182,12 @@
                 <i class="fa-solid fa-volume-xmark text-slate-400 text-sm" id="audio-icon"></i>
             </div>
             
-            <!-- Controle de Volume Oculto (Aparece no Hover) -->
-            <div class="absolute right-0 top-full mt-2 w-40 bg-white/90 backdrop-blur border border-slate-200 rounded-xl shadow-xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top-right scale-95 group-hover:scale-100">
-                <p class="text-xs text-slate-500 font-bold mb-2 uppercase text-center">Volume</p>
-                <input type="range" id="volumeSlider" min="0" max="100" value="70" class="w-full accent-green-600 cursor-pointer">
+            <!-- Controle de Volume Oculto (Aparece no Hover). Ajuste: pt-2 para ponte visual -->
+            <div class="absolute right-0 top-full pt-2 w-40 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                <div class="bg-white/90 backdrop-blur border border-slate-200 rounded-xl shadow-xl p-4 transform origin-top-right scale-95 group-hover:scale-100 transition-transform duration-300">
+                    <p class="text-xs text-slate-500 font-bold mb-2 uppercase text-center">Volume</p>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="70" class="w-full accent-green-600 cursor-pointer">
+                </div>
             </div>
         </div>
     </header>
@@ -268,7 +270,7 @@
                 <div class="stagger-1 flex items-center gap-4 mb-8 shrink-0">
                     <div class="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center text-xl font-bold shadow-lg"><i class="fa-solid fa-code"></i></div>
                     <h2 class="text-4xl font-bold text-slate-800">A Anatomia da Web</h2>
-                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse ml-2 hidden md:inline-block">Avançe nas setas para montar a página</span>
+                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse ml-2 hidden md:inline-block">Avance nas setas para montar a página</span>
                 </div>
                 
                 <div class="flex flex-col lg:flex-row gap-8 items-stretch stagger-2 flex-1 pb-8">
@@ -371,7 +373,7 @@
                     
                     <div class="flex-1 w-full relative h-[360px] rounded-2xl overflow-hidden shadow-2xl border border-slate-300 bg-white flex items-center justify-center">
                         <div id="vis-vant-0" class="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 z-10 opacity-100 bg-slate-50 text-slate-400">
-                             <i class="fa-solid fa-eye text-6xl mb-4 opacity-30"></i><p class="font-medium">Avançe para ver na prática</p>
+                             <i class="fa-solid fa-eye text-6xl mb-4 opacity-30"></i><p class="font-medium">Avance para ver na prática</p>
                         </div>
                         <!-- Vis 1: Responsividade (Loop Animation) -->
                         <div id="vis-vant-1" class="absolute inset-0 flex items-center justify-center bg-slate-200 transition-opacity duration-500 z-20 opacity-0 pointer-events-none">
@@ -691,9 +693,13 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
                             <h3 class="text-2xl font-bold text-slate-800 mb-6">Sites</h3>
                             <div class="relative inline-block group">
                                 <button class="bg-teal-600 text-white px-6 py-3 rounded-lg font-bold shadow-md cursor-pointer"><i class="fa-solid fa-plus mr-2"></i> Add new site</button>
-                                <div class="absolute top-14 left-0 bg-white border border-slate-200 rounded-lg shadow-xl w-64 text-left flex-col overflow-hidden hidden group-hover:flex z-50">
-                                    <div onclick="setNetlifyStep(1)" class="px-4 py-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"><strong class="block text-slate-700">Import an existing project</strong><span class="text-xs text-slate-500">From a Git repository</span></div>
-                                    <div class="px-4 py-3 hover:bg-slate-50 cursor-not-allowed opacity-50"><strong class="block text-slate-700">Deploy manually</strong></div>
+                                
+                                <!-- CORREÇÃO DE HOVER: pt-2 adicionado e margin removida -->
+                                <div class="absolute top-full left-0 pt-2 hidden group-hover:flex z-50 w-64">
+                                    <div class="bg-white border border-slate-200 rounded-lg shadow-xl text-left w-full flex-col overflow-hidden">
+                                        <div onclick="setNetlifyStep(1)" class="px-4 py-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"><strong class="block text-slate-700">Import an existing project</strong><span class="text-xs text-slate-500">From a Git repository</span></div>
+                                        <div class="px-4 py-3 hover:bg-slate-50 cursor-not-allowed opacity-50"><strong class="block text-slate-700">Deploy manually</strong></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1369,7 +1375,15 @@ Atualize o CSS e o JavaScript para adicionar uma animação de "fade in" e os el
 
         // --- NAVEGAÇÃO DE TECLADO ---
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' || e.key === ' ') nextAction(); else if (e.key === 'ArrowLeft') prevAction();
+            // Se o usuário estiver digitando dentro de um input ou textarea (como o Github Code), não muda o slide.
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault(); // Evita que a página role para baixo ao apertar Espaço
+                nextAction();
+            } else if (e.key === 'ArrowLeft') {
+                prevAction();
+            }
         });
 
         // Initialize UI no carregamento
